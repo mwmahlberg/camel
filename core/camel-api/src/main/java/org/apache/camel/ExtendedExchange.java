@@ -36,6 +36,11 @@ public interface ExtendedExchange extends Exchange {
     void reset();
 
     /**
+     * Sets the created timestamp
+     */
+    void setCreated(long created);
+
+    /**
      * Sets the endpoint which originated this message exchange. This method should typically only be called by
      * {@link Endpoint} implementations
      */

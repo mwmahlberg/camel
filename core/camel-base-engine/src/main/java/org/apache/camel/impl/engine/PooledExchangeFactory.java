@@ -94,6 +94,9 @@ public class PooledExchangeFactory extends ServiceSupport
             if (statisticsEnabled) {
                 acquired.incrementAndGet();
             }
+            // the exchange is reused but update the created to now
+            ExtendedExchange ee = exchange.adapt(ExtendedExchange.class);
+            ee.setCreated(System.currentTimeMillis());
         }
         if (autoRelease) {
             // add on completion which will return the exchange when done
@@ -129,7 +132,6 @@ public class PooledExchangeFactory extends ServiceSupport
     public void release(Exchange exchange) {
         // reset exchange before returning to pool
         try {
-            // TODO: reset on pool as this then update created to be up-to-date
             ExtendedExchange ee = exchange.adapt(ExtendedExchange.class);
             ee.reset();
 

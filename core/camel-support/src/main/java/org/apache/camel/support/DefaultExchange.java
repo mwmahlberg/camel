@@ -124,17 +124,14 @@ public final class DefaultExchange implements ExtendedExchange {
     public void reset() {
         this.properties.clear();
         this.exchangeId = null;
-        // TODO: This is reset time
-        this.created = System.currentTimeMillis();
+        this.created = 0;
         this.in = null;
         this.out = null;
         this.exception = null;
         this.unitOfWork = null;
         // reset pattern to original
         this.pattern = originalPattern;
-        // do not reset endpoint as it would be the same consumer/endpoint again
-        // this.fromEndpoint = null;
-        // this.fromRouteId = null;
+        // do not reset endpoint/fromRouteId as it would be the same consumer/endpoint again
         if (this.onCompletions != null) {
             this.onCompletions.clear();
         }
@@ -155,6 +152,11 @@ public final class DefaultExchange implements ExtendedExchange {
     @Override
     public long getCreated() {
         return created;
+    }
+
+    @Override
+    public void setCreated(long created) {
+        this.created = created;
     }
 
     @Override
