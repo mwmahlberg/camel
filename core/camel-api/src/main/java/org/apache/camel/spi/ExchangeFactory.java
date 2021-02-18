@@ -21,13 +21,14 @@ import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 
 /**
- * Factory used by {@link Consumer} to create Camel {@link Exchange} holding the incoming message received by the consumer.
+ * Factory used by {@link Consumer} to create Camel {@link Exchange} holding the incoming message received by the
+ * consumer.
  * <p/>
  * This factory is only for {@link Consumer}'s to give control on how {@link Exchange} are created and comes into Camel.
- * Each Camel component that provides a {@link Consumer} should use this {@link ExchangeFactory}.
- * There may be other parts in Camel that creates {@link Exchange} such as sub exchanges from Splitter EIP,
- * but they are not part of this contract as we only want to control the created {@link Exchange} that comes
- * into Camel via {@link Consumer} or {@link org.apache.camel.PollingConsumer}.
+ * Each Camel component that provides a {@link Consumer} should use this {@link ExchangeFactory}. There may be other
+ * parts in Camel that creates {@link Exchange} such as sub exchanges from Splitter EIP, but they are not part of this
+ * contract as we only want to control the created {@link Exchange} that comes into Camel via {@link Consumer} or
+ * {@link org.apache.camel.PollingConsumer}.
  * <p/>
  * The factory is pluggable which allows to use different strategies. The default factory will create a new
  * {@link Exchange} instance, and the pooled factory will pool and reuse exchanges.
