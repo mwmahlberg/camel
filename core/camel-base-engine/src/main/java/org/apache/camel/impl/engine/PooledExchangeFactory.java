@@ -151,11 +151,15 @@ public class PooledExchangeFactory extends ServiceSupport
         pool.clear();
 
         if (statisticsEnabled && consumer != null) {
-            String uri = consumer.getEndpoint().getEndpointBaseUri();
-            uri = URISupport.sanitizeUri(uri);
+            // only log if there is any usage
+            boolean shouldLog = created.get() > 0 || acquired.get() > 0 || released.get() > 0 || discarded.get() > 0;
+            if (shouldLog) {
+                String uri = consumer.getEndpoint().getEndpointBaseUri();
+                uri = URISupport.sanitizeUri(uri);
 
-            LOG.info("PooledExchangeFactory ({}) usage [created: {}, reused: {}, released: {}, discarded: {}]",
-                    uri, created.get(), acquired.get(), released.get(), discarded.get());
+                LOG.info("PooledExchangeFactory ({}) usage [created: {}, reused: {}, released: {}, discarded: {}]",
+                        uri, created.get(), acquired.get(), released.get(), discarded.get());
+            }
         }
 
         created.set(0);
