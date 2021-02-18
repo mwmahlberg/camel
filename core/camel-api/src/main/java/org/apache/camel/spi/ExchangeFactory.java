@@ -21,17 +21,22 @@ import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 
 /**
- * Factory for creating {@link Exchange}.
- *
+ * Factory used by {@link Consumer} to create Camel {@link Exchange} holding the incoming message received by the consumer.
+ * <p/>
+ * This factory is only for {@link Consumer}'s to give control on how {@link Exchange} are created and comes into Camel.
+ * Each Camel component that provides a {@link Consumer} should use this {@link ExchangeFactory}.
+ * There may be other parts in Camel that creates {@link Exchange} such as sub exchanges from Splitter EIP,
+ * but they are not part of this contract as we only want to control the created {@link Exchange} that comes
+ * into Camel via {@link Consumer} or {@link org.apache.camel.PollingConsumer}.
+ * <p/>
  * The factory is pluggable which allows to use different strategies. The default factory will create a new
  * {@link Exchange} instance, and the pooled factory will pool and reuse exchanges.
  */
 public interface ExchangeFactory {
 
-    // TODO: new factory per consumer so there is no single race bottleneck
-    // TODO: only use factory on route consumer to limit its scope to most significant impact
     // TODO: release from extended exchange without onCompletion (overhead)
     // TODO: reuse unit of work (expensive to create)
+    // TODO: release via DoneUoW in less expensive way
 
     /**
      * Service factory key.
@@ -41,8 +46,8 @@ public interface ExchangeFactory {
     /**
      * Creates a new {@link ExchangeFactory} that is private for the given consumer.
      *
-     * @param consumer the consumer that will use the created {@link ExchangeFactory}
-     * @return the created factory.
+     * @param  consumer the consumer that will use the created {@link ExchangeFactory}
+     * @return          the created factory.
      */
     ExchangeFactory newExchangeFactory(Consumer consumer);
 
