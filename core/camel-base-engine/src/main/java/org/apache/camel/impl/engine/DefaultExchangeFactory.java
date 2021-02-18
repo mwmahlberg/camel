@@ -41,12 +41,13 @@ public class DefaultExchangeFactory implements ExchangeFactory, CamelContextAwar
     }
 
     @Override
-    public Exchange create() {
+    public Exchange create(boolean autoRelease) {
         return new DefaultExchange(camelContext);
     }
 
     @Override
-    public Exchange create(Endpoint fromEndpoint) {
+    public Exchange create(Endpoint fromEndpoint, boolean autoRelease) {
         return new DefaultExchange(fromEndpoint);
     }
+
 }

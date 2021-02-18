@@ -26,6 +26,7 @@ import org.apache.camel.Processor;
 import org.apache.camel.Route;
 import org.apache.camel.RouteAware;
 import org.apache.camel.spi.ExceptionHandler;
+import org.apache.camel.spi.ExchangeFactory;
 import org.apache.camel.spi.RouteIdAware;
 import org.apache.camel.spi.UnitOfWork;
 import org.apache.camel.support.service.ServiceHelper;
@@ -45,6 +46,7 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
     private final Endpoint endpoint;
     private final Processor processor;
     private final AsyncProcessor asyncProcessor;
+    private final ExchangeFactory exchangeFactory;
     private ExceptionHandler exceptionHandler;
     private Route route;
     private String routeId;
@@ -54,6 +56,7 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
         this.processor = processor;
         this.asyncProcessor = AsyncProcessorConverterHelper.convert(processor);
         this.exceptionHandler = new LoggingExceptionHandler(endpoint.getCamelContext(), getClass());
+        this.exchangeFactory = endpoint.getCamelContext().adapt(ExtendedCamelContext.class).getExchangeFactory();
     }
 
     @Override
@@ -118,6 +121,21 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
      */
     public void doneUoW(Exchange exchange) {
         UnitOfWorkHelper.doneUow(exchange.getUnitOfWork(), exchange);
+    }
+
+    @Override
+    public Exchange createExchange(boolean autoRelease) {
+        Exchange answer = exchangeFactory.create(getEndpoint(), autoRelease);
+        endpoint.configureExchange(answer);
+        answer.adapt(ExtendedExchange.class).setFromRouteId(routeId);
+        return answer;
+    }
+
+    @Override
+    public void releaseExchange(Exchange exchange) {
+        if (exchange != null) {
+            exchangeFactory.release(exchange);
+        }
     }
 
     @Override

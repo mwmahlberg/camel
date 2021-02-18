@@ -16,9 +16,7 @@
  */
 package org.apache.camel.support;
 
-import org.apache.camel.Endpoint;
-import org.apache.camel.PollingConsumer;
-import org.apache.camel.Processor;
+import org.apache.camel.*;
 import org.apache.camel.spi.ExceptionHandler;
 import org.apache.camel.support.service.ServiceSupport;
 
@@ -48,6 +46,16 @@ public abstract class PollingConsumerSupport extends ServiceSupport implements P
     @Override
     public Processor getProcessor() {
         return null;
+    }
+
+    @Override
+    public Exchange createExchange(boolean autoRelease) {
+        throw new UnsupportedOperationException("Not supported on PollingConsumer");
+    }
+
+    @Override
+    public void releaseExchange(Exchange exchange) {
+        throw new UnsupportedOperationException("Not supported on PollingConsumer");
     }
 
     public ExceptionHandler getExceptionHandler() {

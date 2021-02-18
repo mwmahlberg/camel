@@ -48,6 +48,7 @@ public class PooledExchangeFactory extends ServiceSupport
     private final AtomicLong acquired = new AtomicLong();
     private final AtomicLong created = new AtomicLong();
     private final AtomicLong released = new AtomicLong();
+    private final AtomicLong discarded = new AtomicLong();
 
     private CamelContext camelContext;
     private boolean statisticsEnabled = true;
@@ -71,7 +72,7 @@ public class PooledExchangeFactory extends ServiceSupport
     }
 
     @Override
-    public Exchange create() {
+    public Exchange create(boolean autoRelease) {
         Exchange exchange = pool.poll();
         if (exchange == null) {
             if (statisticsEnabled) {
@@ -83,17 +84,16 @@ public class PooledExchangeFactory extends ServiceSupport
             if (statisticsEnabled) {
                 acquired.incrementAndGet();
             }
-            // reset exchange before we use it
-            ExtendedExchange ee = exchange.adapt(ExtendedExchange.class);
-            ee.reset();
         }
-        // add on completion which will return the exchange when done
-        exchange.adapt(ExtendedExchange.class).addOnCompletion(onCompletion);
+        if (autoRelease) {
+            // add on completion which will return the exchange when done
+            exchange.adapt(ExtendedExchange.class).addOnCompletion(onCompletion);
+        }
         return exchange;
     }
 
     @Override
-    public Exchange create(Endpoint fromEndpoint) {
+    public Exchange create(Endpoint fromEndpoint, boolean autoRelease) {
         Exchange exchange = pool.poll();
         if (exchange == null) {
             if (statisticsEnabled) {
@@ -108,17 +108,33 @@ public class PooledExchangeFactory extends ServiceSupport
             // need to mark this exchange from the given endpoint
             exchange.adapt(ExtendedExchange.class).setFromEndpoint(fromEndpoint);
         }
-        // add on completion which will return the exchange when done
-        exchange.adapt(ExtendedExchange.class).addOnCompletion(onCompletion);
+        if (autoRelease) {
+            // add on completion which will return the exchange when done
+            exchange.adapt(ExtendedExchange.class).addOnCompletion(onCompletion);
+        }
         return exchange;
     }
 
     @Override
     public void release(Exchange exchange) {
-        if (statisticsEnabled) {
-            released.incrementAndGet();
+        // reset exchange before returning to pool
+        try {
+            // TODO: reset on pool as this then update created to be up-to-date
+            ExtendedExchange ee = exchange.adapt(ExtendedExchange.class);
+            ee.reset();
+
+            // only release back in pool if reset was success
+            if (statisticsEnabled) {
+                released.incrementAndGet();
+            }
+            pool.offer(exchange);
+        } catch (Exception e) {
+            if (statisticsEnabled) {
+                discarded.incrementAndGet();
+            }
+            // ignore
+            LOG.debug("Error resetting exchange: {}. This exchange is discarded.", exchange);
         }
-        pool.offer(exchange);
     }
 
     @Override
@@ -126,13 +142,14 @@ public class PooledExchangeFactory extends ServiceSupport
         pool.clear();
 
         if (statisticsEnabled) {
-            LOG.info("PooledExchangeFactory usage [created: {}, acquired: {}, released: {}]", created.get(), acquired.get(),
-                    released.get());
+            LOG.info("PooledExchangeFactory usage [created: {}, acquired: {}, released: {}, discarded: {}]",
+                    created.get(), acquired.get(), released.get(), discarded.get());
         }
 
         created.set(0);
         acquired.set(0);
         released.set(0);
+        discarded.set(0);
     }
 
     private final class ReleaseOnCompletion extends SynchronizationAdapter {
@@ -145,7 +162,9 @@ public class PooledExchangeFactory extends ServiceSupport
 
         @Override
         public void onDone(Exchange exchange) {
-            release(exchange);
+            if (exchange != null) {
+                release(exchange);
+            }
         }
     }
 

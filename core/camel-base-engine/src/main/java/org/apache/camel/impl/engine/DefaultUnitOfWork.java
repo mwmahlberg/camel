@@ -132,6 +132,18 @@ public class DefaultUnitOfWork implements UnitOfWork, Service {
     }
 
     @Override
+    public void reset() {
+        routes.clear();
+        if (synchronizations != null) {
+            synchronizations.clear();
+        }
+        originalInMessage = null;
+        if (transactedBy != null) {
+            transactedBy.clear();
+        }
+    }
+
+    @Override
     public void setParentUnitOfWork(UnitOfWork parentUnitOfWork) {
     }
 

@@ -185,7 +185,7 @@ public class TimerConsumer extends DefaultConsumer implements StartupListener, S
     }
 
     protected void sendTimerExchange(long counter) {
-        final Exchange exchange = endpoint.createExchange();
+        final Exchange exchange = createExchange(false);
 
         if (endpoint.isIncludeMetadata()) {
             exchange.setProperty(Exchange.TIMER_COUNTER, counter);
@@ -211,6 +211,10 @@ public class TimerConsumer extends DefaultConsumer implements StartupListener, S
                     if (exchange.getException() != null) {
                         getExceptionHandler().handleException("Error processing exchange", exchange, exchange.getException());
                     }
+                    // sync wil release outside this callback
+                    if (!doneSync) {
+                        releaseExchange(exchange);
+                    }
                 }
             });
         } else {
@@ -221,8 +225,12 @@ public class TimerConsumer extends DefaultConsumer implements StartupListener, S
             }
 
             // handle any thrown exception
-            if (exchange.getException() != null) {
-                getExceptionHandler().handleException("Error processing exchange", exchange, exchange.getException());
+            try {
+                if (exchange.getException() != null) {
+                    getExceptionHandler().handleException("Error processing exchange", exchange, exchange.getException());
+                }
+            } finally {
+                releaseExchange(exchange);
             }
         }
     }

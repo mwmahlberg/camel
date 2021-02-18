@@ -30,6 +30,8 @@ public interface ExtendedExchange extends Exchange {
 
     /**
      * Clears the exchange from user data so it may be reused.
+     * <p/>
+     * <b>Important:</b> This API is NOT intended for Camel end users, but used internally by Camel itself.
      */
     void reset();
 

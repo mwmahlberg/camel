@@ -79,6 +79,13 @@ public interface Endpoint extends IsSingleton, Service {
     Exchange createExchange(ExchangePattern pattern);
 
     /**
+     * Configures a newly created {@link Exchange}.
+     *
+     * @param exchange the new exchange
+     */
+    void configureExchange(Exchange exchange);
+
+    /**
      * Returns the context which created the endpoint
      *
      * @return the context which created the endpoint

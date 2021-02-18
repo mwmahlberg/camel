@@ -53,6 +53,7 @@ public final class DefaultExchange implements ExtendedExchange {
     private Exception exception;
     private String exchangeId;
     private UnitOfWork unitOfWork;
+    private ExchangePattern originalPattern;
     private ExchangePattern pattern;
     private Endpoint fromEndpoint;
     private String fromRouteId;
@@ -74,12 +75,14 @@ public final class DefaultExchange implements ExtendedExchange {
         this.context = context;
         this.pattern = ExchangePattern.InOnly;
         this.created = System.currentTimeMillis();
+        this.originalPattern = this.pattern;
     }
 
     public DefaultExchange(CamelContext context, ExchangePattern pattern) {
         this.context = context;
         this.pattern = pattern;
         this.created = System.currentTimeMillis();
+        this.originalPattern = this.pattern;
     }
 
     public DefaultExchange(Exchange parent) {
@@ -89,6 +92,7 @@ public final class DefaultExchange implements ExtendedExchange {
         this.fromEndpoint = parent.getFromEndpoint();
         this.fromRouteId = parent.getFromRouteId();
         this.unitOfWork = parent.getUnitOfWork();
+        this.originalPattern = this.pattern;
     }
 
     public DefaultExchange(Endpoint fromEndpoint) {
@@ -96,6 +100,7 @@ public final class DefaultExchange implements ExtendedExchange {
         this.pattern = ExchangePattern.InOnly;
         this.created = System.currentTimeMillis();
         this.fromEndpoint = fromEndpoint;
+        this.originalPattern = this.pattern;
     }
 
     public DefaultExchange(Endpoint fromEndpoint, ExchangePattern pattern) {
@@ -103,6 +108,7 @@ public final class DefaultExchange implements ExtendedExchange {
         this.pattern = pattern;
         this.created = System.currentTimeMillis();
         this.fromEndpoint = fromEndpoint;
+        this.originalPattern = this.pattern;
     }
 
     @Override
@@ -118,13 +124,17 @@ public final class DefaultExchange implements ExtendedExchange {
     public void reset() {
         this.properties.clear();
         this.exchangeId = null;
+        // TODO: This is reset time
         this.created = System.currentTimeMillis();
+        this.in = null;
         this.out = null;
         this.exception = null;
         this.unitOfWork = null;
-        this.pattern = null;
-        this.fromEndpoint = null;
-        this.fromRouteId = null;
+        // reset pattern to original
+        this.pattern = originalPattern;
+        // do not reset endpoint as it would be the same consumer/endpoint again
+        // this.fromEndpoint = null;
+        // this.fromRouteId = null;
         if (this.onCompletions != null) {
             this.onCompletions.clear();
         }

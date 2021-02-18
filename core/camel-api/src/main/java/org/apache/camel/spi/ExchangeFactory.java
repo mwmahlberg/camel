@@ -27,6 +27,11 @@ import org.apache.camel.Exchange;
  */
 public interface ExchangeFactory {
 
+    // TODO: new factory per consumer so there is no single race bottleneck
+    // TODO: only use factory on route consumer to limit its scope to most significant impact
+    // TODO: release from extended exchange without onCompletion (overhead)
+    // TODO: reuse unit of work (expensive to create)
+
     /**
      * Service factory key.
      */
@@ -34,15 +39,18 @@ public interface ExchangeFactory {
 
     /**
      * Gets a new {@link Exchange}
+     *
+     * @param autoRelease whether to auto release the exchange when routing is complete via {@link UnitOfWork}
      */
-    Exchange create();
+    Exchange create(boolean autoRelease);
 
     /**
      * Gets a new {@link Exchange}
      *
+     * @param autoRelease  whether to auto release the exchange when routing is complete via {@link UnitOfWork}
      * @param fromEndpoint the from endpoint
      */
-    Exchange create(Endpoint fromEndpoint);
+    Exchange create(Endpoint fromEndpoint, boolean autoRelease);
 
     default void release(Exchange exchange) {
         // noop

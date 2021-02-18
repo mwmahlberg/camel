@@ -16,6 +16,8 @@
  */
 package org.apache.camel;
 
+import org.apache.camel.spi.UnitOfWork;
+
 /**
  * A consumer of message exchanges from an {@link Endpoint}.
  * <p/>
@@ -25,6 +27,21 @@ package org.apache.camel;
  */
 public interface Consumer extends Service, EndpointAware {
 
+    /**
+     * The processor that will process the {@link Exchange} that was consumed.
+     */
     Processor getProcessor();
+
+    /**
+     * Creates an {@link Exchange} that was consumed.
+     *
+     * @param autoRelease whether to auto release the exchange when routing is complete via {@link UnitOfWork}
+     */
+    Exchange createExchange(boolean autoRelease);
+
+    /**
+     * Releases the {@link Exchange} when its completed processing and no longer needed.
+     */
+    void releaseExchange(Exchange exchange);
 
 }
