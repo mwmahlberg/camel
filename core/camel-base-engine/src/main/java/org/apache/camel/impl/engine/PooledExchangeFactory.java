@@ -118,8 +118,11 @@ public class PooledExchangeFactory extends ServiceSupport
             if (statisticsEnabled) {
                 acquired.incrementAndGet();
             }
+            // the exchange is reused but update the created to now
+            ExtendedExchange ee = exchange.adapt(ExtendedExchange.class);
+            ee.setCreated(System.currentTimeMillis());
             // need to mark this exchange from the given endpoint
-            exchange.adapt(ExtendedExchange.class).setFromEndpoint(fromEndpoint);
+            ee.setFromEndpoint(fromEndpoint);
         }
         if (autoRelease) {
             // add on completion which will return the exchange when done
