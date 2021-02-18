@@ -19,18 +19,12 @@ package org.apache.camel.impl.engine;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.camel.CamelContext;
-import org.apache.camel.CamelContextAware;
-import org.apache.camel.Endpoint;
-import org.apache.camel.Exchange;
-import org.apache.camel.Experimental;
-import org.apache.camel.ExtendedExchange;
-import org.apache.camel.NonManagedService;
-import org.apache.camel.StaticService;
+import org.apache.camel.*;
 import org.apache.camel.spi.ExchangeFactory;
 import org.apache.camel.support.DefaultExchange;
 import org.apache.camel.support.SynchronizationAdapter;
 import org.apache.camel.support.service.ServiceSupport;
+import org.apache.camel.util.URISupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +37,7 @@ public class PooledExchangeFactory extends ServiceSupport
 
     private static final Logger LOG = LoggerFactory.getLogger(PooledExchangeFactory.class);
 
+    private final Consumer consumer;
     private final ReleaseOnCompletion onCompletion = new ReleaseOnCompletion();
     private final ConcurrentLinkedQueue<Exchange> pool = new ConcurrentLinkedQueue<>();
     private final AtomicLong acquired = new AtomicLong();
@@ -53,6 +48,16 @@ public class PooledExchangeFactory extends ServiceSupport
     private CamelContext camelContext;
     private boolean statisticsEnabled = true;
 
+    public PooledExchangeFactory() {
+        this.consumer = null;
+    }
+
+    private PooledExchangeFactory(Consumer consumer, CamelContext camelContext, boolean statisticsEnabled) {
+        this.consumer = consumer;
+        this.camelContext = camelContext;
+        this.statisticsEnabled = statisticsEnabled;
+    }
+
     @Override
     public CamelContext getCamelContext() {
         return camelContext;
@@ -61,6 +66,11 @@ public class PooledExchangeFactory extends ServiceSupport
     @Override
     public void setCamelContext(CamelContext camelContext) {
         this.camelContext = camelContext;
+    }
+
+    @Override
+    public ExchangeFactory newExchangeFactory(Consumer consumer) {
+        return new PooledExchangeFactory(consumer, camelContext, statisticsEnabled);
     }
 
     public boolean isStatisticsEnabled() {
@@ -132,7 +142,6 @@ public class PooledExchangeFactory extends ServiceSupport
             if (statisticsEnabled) {
                 discarded.incrementAndGet();
             }
-            // ignore
             LOG.debug("Error resetting exchange: {}. This exchange is discarded.", exchange);
         }
     }
@@ -141,9 +150,12 @@ public class PooledExchangeFactory extends ServiceSupport
     protected void doStop() throws Exception {
         pool.clear();
 
-        if (statisticsEnabled) {
-            LOG.info("PooledExchangeFactory usage [created: {}, acquired: {}, released: {}, discarded: {}]",
-                    created.get(), acquired.get(), released.get(), discarded.get());
+        if (statisticsEnabled && consumer != null) {
+            String uri = consumer.getEndpoint().getEndpointBaseUri();
+            uri = URISupport.sanitizeUri(uri);
+
+            LOG.info("PooledExchangeFactory ({}) usage [created: {}, reused: {}, released: {}, discarded: {}]",
+                    uri, created.get(), acquired.get(), released.get(), discarded.get());
         }
 
         created.set(0);

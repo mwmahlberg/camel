@@ -16,10 +16,7 @@
  */
 package org.apache.camel.impl.engine;
 
-import org.apache.camel.CamelContext;
-import org.apache.camel.CamelContextAware;
-import org.apache.camel.Endpoint;
-import org.apache.camel.Exchange;
+import org.apache.camel.*;
 import org.apache.camel.spi.ExchangeFactory;
 import org.apache.camel.support.DefaultExchange;
 
@@ -38,6 +35,12 @@ public class DefaultExchangeFactory implements ExchangeFactory, CamelContextAwar
     @Override
     public void setCamelContext(CamelContext camelContext) {
         this.camelContext = camelContext;
+    }
+
+    @Override
+    public ExchangeFactory newExchangeFactory(Consumer consumer) {
+        // we just use a shared factory
+        return this;
     }
 
     @Override

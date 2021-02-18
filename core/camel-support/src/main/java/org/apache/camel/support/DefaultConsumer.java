@@ -56,7 +56,9 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
         this.processor = processor;
         this.asyncProcessor = AsyncProcessorConverterHelper.convert(processor);
         this.exceptionHandler = new LoggingExceptionHandler(endpoint.getCamelContext(), getClass());
-        this.exchangeFactory = endpoint.getCamelContext().adapt(ExtendedCamelContext.class).getExchangeFactory();
+        // create a per consumer exchange factory
+        this.exchangeFactory = endpoint.getCamelContext().adapt(ExtendedCamelContext.class)
+                .getExchangeFactory().newExchangeFactory(this);
     }
 
     @Override
@@ -167,19 +169,25 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
     @Override
     protected void doInit() throws Exception {
         LOG.debug("Init consumer: {}", this);
-        ServiceHelper.initService(processor);
-    }
-
-    @Override
-    protected void doStop() throws Exception {
-        LOG.debug("Stopping consumer: {}", this);
-        ServiceHelper.stopService(processor);
+        ServiceHelper.initService(exchangeFactory, processor);
     }
 
     @Override
     protected void doStart() throws Exception {
         LOG.debug("Starting consumer: {}", this);
-        ServiceHelper.startService(processor);
+        ServiceHelper.startService(exchangeFactory, processor);
+    }
+
+    @Override
+    protected void doStop() throws Exception {
+        LOG.debug("Stopping consumer: {}", this);
+        ServiceHelper.stopService(exchangeFactory, processor);
+    }
+
+    @Override
+    protected void doShutdown() throws Exception {
+        LOG.debug("Shutting down consumer: {}", this);
+        ServiceHelper.stopAndShutdownServices(exchangeFactory, processor);
     }
 
     /**

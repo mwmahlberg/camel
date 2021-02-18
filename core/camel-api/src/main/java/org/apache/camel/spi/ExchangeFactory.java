@@ -16,6 +16,7 @@
  */
 package org.apache.camel.spi;
 
+import org.apache.camel.Consumer;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 
@@ -36,6 +37,14 @@ public interface ExchangeFactory {
      * Service factory key.
      */
     String FACTORY = "exchange-factory";
+
+    /**
+     * Creates a new {@link ExchangeFactory} that is private for the given consumer.
+     *
+     * @param consumer the consumer that will use the created {@link ExchangeFactory}
+     * @return the created factory.
+     */
+    ExchangeFactory newExchangeFactory(Consumer consumer);
 
     /**
      * Gets a new {@link Exchange}
