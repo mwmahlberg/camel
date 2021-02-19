@@ -54,7 +54,7 @@ public abstract class PollingConsumerSupport extends ServiceSupport implements P
     }
 
     @Override
-    public void releaseExchange(Exchange exchange) {
+    public void releaseExchange(Exchange exchange, boolean autoRelease) {
         throw new UnsupportedOperationException("Not supported on PollingConsumer");
     }
 

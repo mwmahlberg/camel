@@ -22,7 +22,6 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.camel.AsyncCallback;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
@@ -204,17 +203,14 @@ public class TimerConsumer extends DefaultConsumer implements StartupListener, S
         }
 
         if (!endpoint.isSynchronous()) {
-            getAsyncProcessor().process(exchange, new AsyncCallback() {
-                @Override
-                public void done(boolean doneSync) {
-                    // handle any thrown exception
-                    if (exchange.getException() != null) {
-                        getExceptionHandler().handleException("Error processing exchange", exchange, exchange.getException());
-                    }
-                    // sync wil release outside this callback
-                    if (!doneSync) {
-                        releaseExchange(exchange);
-                    }
+            getAsyncProcessor().process(exchange, cbDoneSync -> {
+                // handle any thrown exception
+                if (exchange.getException() != null) {
+                    getExceptionHandler().handleException("Error processing exchange", exchange, exchange.getException());
+                }
+                // sync wil release outside this callback
+                if (!cbDoneSync) {
+                    releaseExchange(exchange, false);
                 }
             });
         } else {
@@ -230,7 +226,7 @@ public class TimerConsumer extends DefaultConsumer implements StartupListener, S
                     getExceptionHandler().handleException("Error processing exchange", exchange, exchange.getException());
                 }
             } finally {
-                releaseExchange(exchange);
+                releaseExchange(exchange, false);
             }
         }
     }

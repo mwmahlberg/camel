@@ -133,8 +133,14 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
     }
 
     @Override
-    public void releaseExchange(Exchange exchange) {
+    public void releaseExchange(Exchange exchange, boolean autoRelease) {
         if (exchange != null) {
+            if (!autoRelease) {
+                // we must manually done the exchange
+                // TODO: hack
+                exchange.adapt(ExtendedExchange.class).onDone(e -> true);
+                exchange.adapt(ExtendedExchange.class).done();
+            }
             exchangeFactory.release(exchange);
         }
     }

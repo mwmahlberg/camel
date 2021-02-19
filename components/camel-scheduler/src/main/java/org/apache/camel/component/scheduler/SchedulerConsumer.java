@@ -19,7 +19,6 @@ package org.apache.camel.component.scheduler;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.camel.AsyncCallback;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.support.ScheduledPollConsumer;
@@ -57,22 +56,19 @@ public class SchedulerConsumer extends ScheduledPollConsumer {
 
         if (!getEndpoint().isSynchronous()) {
             final AtomicBoolean polled = new AtomicBoolean(true);
-            boolean doneSync = getAsyncProcessor().process(exchange, new AsyncCallback() {
-                @Override
-                public void done(boolean doneSync) {
-                    // handle any thrown exception
-                    if (exchange.getException() != null) {
-                        getExceptionHandler().handleException("Error processing exchange", exchange, exchange.getException());
-                    }
-                    boolean wasPolled = exchange.getProperty(Exchange.SCHEDULER_POLLED_MESSAGES, true, boolean.class);
-                    if (!wasPolled) {
-                        polled.set(false);
-                    }
+            boolean doneSync = getAsyncProcessor().process(exchange, cbDoneSync -> {
+                // handle any thrown exception
+                if (exchange.getException() != null) {
+                    getExceptionHandler().handleException("Error processing exchange", exchange, exchange.getException());
+                }
+                boolean wasPolled = exchange.getProperty(Exchange.SCHEDULER_POLLED_MESSAGES, true, boolean.class);
+                if (!wasPolled) {
+                    polled.set(false);
+                }
 
-                    // sync wil release outside this callback
-                    if (!doneSync) {
-                        releaseExchange(exchange);
-                    }
+                // sync wil release outside this callback
+                if (!cbDoneSync) {
+                    releaseExchange(exchange, false);
                 }
             });
             if (!doneSync) {
@@ -95,7 +91,7 @@ public class SchedulerConsumer extends ScheduledPollConsumer {
         // for example to overrule and indicate no message was polled, which can affect the scheduler
         // to leverage backoff on idle etc.
         boolean polled = exchange.getProperty(Exchange.SCHEDULER_POLLED_MESSAGES, true, boolean.class);
-        releaseExchange(exchange);
+        releaseExchange(exchange, false);
         return polled ? 1 : 0;
     }
 

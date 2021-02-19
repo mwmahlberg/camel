@@ -41,7 +41,9 @@ public interface Consumer extends Service, EndpointAware {
 
     /**
      * Releases the {@link Exchange} when its completed processing and no longer needed.
+     *
+     * @param autoRelease whether the exchange was created with auto release
      */
-    void releaseExchange(Exchange exchange);
+    void releaseExchange(Exchange exchange, boolean autoRelease);
 
 }

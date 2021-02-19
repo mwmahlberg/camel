@@ -86,7 +86,7 @@ public class DataSetTestEndpointTest extends ContextTestSupport {
                 }
 
                 @Override
-                public void releaseExchange(Exchange exchange) {
+                public void releaseExchange(Exchange exchange, boolean autoRelease) {
                     // noop
                 }
 

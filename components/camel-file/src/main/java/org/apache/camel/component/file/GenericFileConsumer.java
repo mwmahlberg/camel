@@ -272,7 +272,7 @@ public abstract class GenericFileConsumer<T> extends ScheduledBatchPollingConsum
             GenericFile<?> file = exchange.getProperty(FileComponent.FILE_EXCHANGE_FILE, GenericFile.class);
             String key = file.getAbsoluteFilePath();
             endpoint.getInProgressRepository().remove(key);
-            releaseExchange(exchange);
+            releaseExchange(exchange, true);
         }
     }
 

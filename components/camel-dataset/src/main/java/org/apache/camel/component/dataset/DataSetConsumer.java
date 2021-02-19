@@ -125,7 +125,7 @@ public class DataSetConsumer extends DefaultConsumer {
             } catch (Exception e) {
                 handleException(e);
             } finally {
-                releaseExchange(exchange);
+                releaseExchange(exchange, false);
             }
         }
     }
