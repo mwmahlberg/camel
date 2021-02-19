@@ -19,7 +19,15 @@ package org.apache.camel.impl.engine;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.camel.*;
+import org.apache.camel.CamelContext;
+import org.apache.camel.CamelContextAware;
+import org.apache.camel.Consumer;
+import org.apache.camel.Endpoint;
+import org.apache.camel.Exchange;
+import org.apache.camel.Experimental;
+import org.apache.camel.ExtendedExchange;
+import org.apache.camel.NonManagedService;
+import org.apache.camel.StaticService;
 import org.apache.camel.spi.ExchangeFactory;
 import org.apache.camel.support.DefaultExchange;
 import org.apache.camel.support.SynchronizationAdapter;
@@ -89,18 +97,19 @@ public class PooledExchangeFactory extends ServiceSupport
                 created.incrementAndGet();
             }
             // create a new exchange as there was no free from the pool
-            exchange = new DefaultExchange(camelContext);
+            ExtendedExchange answer = new DefaultExchange(camelContext);
+            if (autoRelease) {
+                // the consumer will either always be in auto release mode or not, so its safe to initialize the task only once when the exchange is created
+                answer.onDone(this::release);
+            }
+            return answer;
         } else {
             if (statisticsEnabled) {
                 acquired.incrementAndGet();
             }
-            // the exchange is reused but update the created to now
+            // reset exchange for reuse
             ExtendedExchange ee = exchange.adapt(ExtendedExchange.class);
-            ee.setCreated(System.currentTimeMillis());
-        }
-        if (autoRelease) {
-            // add on completion which will return the exchange when done
-            exchange.adapt(ExtendedExchange.class).addOnCompletion(onCompletion);
+            ee.reset(System.currentTimeMillis());
         }
         return exchange;
     }
@@ -113,41 +122,41 @@ public class PooledExchangeFactory extends ServiceSupport
                 created.incrementAndGet();
             }
             // create a new exchange as there was no free from the pool
-            exchange = new DefaultExchange(fromEndpoint);
+            ExtendedExchange answer = new DefaultExchange(fromEndpoint);
+            if (autoRelease) {
+                // the consumer will either always be in auto release mode or not, so its safe to initialize the task only once when the exchange is created
+                answer.onDone(this::release);
+            }
+            return answer;
         } else {
             if (statisticsEnabled) {
                 acquired.incrementAndGet();
             }
-            // the exchange is reused but update the created to now
+            // reset exchange for reuse
             ExtendedExchange ee = exchange.adapt(ExtendedExchange.class);
-            ee.setCreated(System.currentTimeMillis());
-            // need to mark this exchange from the given endpoint
-            ee.setFromEndpoint(fromEndpoint);
-        }
-        if (autoRelease) {
-            // add on completion which will return the exchange when done
-            exchange.adapt(ExtendedExchange.class).addOnCompletion(onCompletion);
+            ee.reset(System.currentTimeMillis());
         }
         return exchange;
     }
 
     @Override
-    public void release(Exchange exchange) {
+    public boolean release(Exchange exchange) {
         // reset exchange before returning to pool
         try {
             ExtendedExchange ee = exchange.adapt(ExtendedExchange.class);
-            ee.reset();
+            ee.done();
 
             // only release back in pool if reset was success
             if (statisticsEnabled) {
                 released.incrementAndGet();
             }
-            pool.offer(exchange);
+            return pool.offer(exchange);
         } catch (Exception e) {
             if (statisticsEnabled) {
                 discarded.incrementAndGet();
             }
             LOG.debug("Error resetting exchange: {}. This exchange is discarded.", exchange);
+            return false;
         }
     }
 

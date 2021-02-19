@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.CamelExecutionException;
@@ -45,6 +46,7 @@ import org.apache.camel.util.ObjectHelper;
 public final class DefaultExchange implements ExtendedExchange {
 
     private final CamelContext context;
+    private Function<Exchange, Boolean> onDone;
     private long created;
     // optimize to create properties always and with a reasonable small size
     private final Map<String, Object> properties = new ConcurrentHashMap<>(8);
@@ -121,46 +123,59 @@ public final class DefaultExchange implements ExtendedExchange {
         }
     }
 
-    public void reset() {
-        this.properties.clear();
-        this.exchangeId = null;
-        this.created = 0;
-        // TODO: optimize in/out to keep as default message (if original message is this kind)
-        this.in = null;
-        this.out = null;
-        this.exception = null;
-        // reset uow
-        if (this.unitOfWork != null) {
-            this.unitOfWork.reset();
+    @Override
+    public void onDone(Function<Exchange, Boolean> task) {
+        this.onDone = task;
+    }
+
+    public void done() {
+        // only need to do this if there is an onDone task
+        // and use created flag to avoid doing done more than once
+        if (created > 0) {
+            this.created = 0; // by setting to 0 we also flag that this exchange is done and needs to be reset to use again
+            this.properties.clear();
+            this.exchangeId = null;
+            // TODO: optimize in/out to keep as default message (if original message is this kind)
+            this.in = null;
+            this.out = null;
+            this.exception = null;
+            // reset uow
+            if (this.unitOfWork != null) {
+                this.unitOfWork.reset();
+            }
+            // reset pattern to original
+            this.pattern = originalPattern;
+            if (this.onCompletions != null) {
+                this.onCompletions.clear();
+            }
+            // do not reset endpoint/fromRouteId as it would be the same consumer/endpoint again
+            this.externalRedelivered = null;
+            this.historyNodeId = null;
+            this.historyNodeLabel = null;
+            this.transacted = false;
+            this.routeStop = false;
+            this.rollbackOnly = false;
+            this.rollbackOnlyLast = false;
+            this.notifyEvent = false;
+            this.interrupted = false;
+            this.interruptable = true;
+            this.redeliveryExhausted = false;
+            this.errorHandlerHandled = null;
+
+            if (onDone != null) {
+                onDone.apply(this);
+            }
         }
-        // reset pattern to original
-        this.pattern = originalPattern;
-        if (this.onCompletions != null) {
-            this.onCompletions.clear();
-        }
-        // do not reset endpoint/fromRouteId as it would be the same consumer/endpoint again
-        this.externalRedelivered = null;
-        this.historyNodeId = null;
-        this.historyNodeLabel = null;
-        this.transacted = false;
-        this.routeStop = false;
-        this.rollbackOnly = false;
-        this.rollbackOnlyLast = false;
-        this.notifyEvent = false;
-        this.interrupted = false;
-        this.interruptable = true;
-        this.redeliveryExhausted = false;
-        this.errorHandlerHandled = null;
+    }
+
+    @Override
+    public void reset(long created) {
+        this.created = created;
     }
 
     @Override
     public long getCreated() {
         return created;
-    }
-
-    @Override
-    public void setCreated(long created) {
-        this.created = created;
     }
 
     @Override
@@ -603,7 +618,7 @@ public final class DefaultExchange implements ExtendedExchange {
     @Override
     public void setUnitOfWork(UnitOfWork unitOfWork) {
         this.unitOfWork = unitOfWork;
-        if (unitOfWork != null && onCompletions != null) {
+        if (unitOfWork != null && onCompletions != null && !onCompletions.isEmpty()) {
             // now an unit of work has been assigned so add the on completions
             // we might have registered already
             for (Synchronization onCompletion : onCompletions) {
@@ -612,7 +627,6 @@ public final class DefaultExchange implements ExtendedExchange {
             // cleanup the temporary on completion list as they now have been registered
             // on the unit of work
             onCompletions.clear();
-            onCompletions = null;
         }
     }
 
@@ -626,7 +640,7 @@ public final class DefaultExchange implements ExtendedExchange {
             }
             onCompletions.add(onCompletion);
         } else {
-            getUnitOfWork().addSynchronization(onCompletion);
+            unitOfWork.addSynchronization(onCompletion);
         }
     }
 
@@ -643,13 +657,12 @@ public final class DefaultExchange implements ExtendedExchange {
 
     @Override
     public void handoverCompletions(Exchange target) {
-        if (onCompletions != null) {
+        if (onCompletions != null && !onCompletions.isEmpty()) {
             for (Synchronization onCompletion : onCompletions) {
                 target.adapt(ExtendedExchange.class).addOnCompletion(onCompletion);
             }
             // cleanup the temporary on completion list as they have been handed over
             onCompletions.clear();
-            onCompletions = null;
         } else if (unitOfWork != null) {
             // let unit of work handover
             unitOfWork.handoverSynchronization(target);
@@ -659,10 +672,9 @@ public final class DefaultExchange implements ExtendedExchange {
     @Override
     public List<Synchronization> handoverCompletions() {
         List<Synchronization> answer = null;
-        if (onCompletions != null) {
+        if (onCompletions != null && !onCompletions.isEmpty()) {
             answer = new ArrayList<>(onCompletions);
             onCompletions.clear();
-            onCompletions = null;
         }
         return answer;
     }

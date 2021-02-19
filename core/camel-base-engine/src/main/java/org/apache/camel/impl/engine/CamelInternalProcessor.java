@@ -658,11 +658,17 @@ public class CamelInternalProcessor extends DelegateAsyncProcessor implements In
                 created = createUnitOfWork(exchange);
                 ExtendedExchange ee = (ExtendedExchange) exchange;
                 ee.setUnitOfWork(created);
-                created.start();
                 uow = created;
             } else {
                 // reuse existing exchange
-                uow.onExchange(exchange);
+                if (uow.onPrepare(exchange)) {
+                    // need to re-attach uow
+                    ExtendedExchange ee = (ExtendedExchange) exchange;
+                    ee.setUnitOfWork(uow);
+                    // we are prepared for reuse and can regard it as-if we created the unit of work
+                    // so the after method knows that this is the outer bounds and should done the unit of work
+                    created = uow;
+                }
             }
 
             // for any exchange we should push/pop route context so we can keep track of which route we are routing

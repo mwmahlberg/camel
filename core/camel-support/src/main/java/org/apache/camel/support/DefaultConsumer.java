@@ -109,7 +109,6 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
         UnitOfWork uow = endpoint.getCamelContext().adapt(ExtendedCamelContext.class).getUnitOfWorkFactory()
                 .createUnitOfWork(exchange);
         exchange.adapt(ExtendedExchange.class).setUnitOfWork(uow);
-        uow.start();
         return uow;
     }
 

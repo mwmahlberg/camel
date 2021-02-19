@@ -23,13 +23,12 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import org.apache.camel.Route;
-import org.apache.camel.Service;
 
 /**
  * An object representing the unit of work processing an {@link Exchange} which allows the use of
  * {@link Synchronization} hooks. This object might map one-to-one with a transaction in JPA or Spring; or might not.
  */
-public interface UnitOfWork extends Service {
+public interface UnitOfWork {
 
     String MDC_BREADCRUMB_ID = "camel.breadcrumbId";
     String MDC_EXCHANGE_ID = "camel.exchangeId";
@@ -50,9 +49,10 @@ public interface UnitOfWork extends Service {
     /**
      * Prepares this unit of work with the given input {@link Exchange}
      *
-     * @param exchange the exchange
+     * @param  exchange the exchange
+     * @return          true if the unit of work was created and prepared, false if already prepared
      */
-    void onExchange(Exchange exchange);
+    boolean onPrepare(Exchange exchange);
 
     /**
      * Adds a synchronization hook

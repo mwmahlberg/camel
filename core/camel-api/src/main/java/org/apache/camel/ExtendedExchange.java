@@ -18,6 +18,7 @@ package org.apache.camel;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.apache.camel.spi.Synchronization;
 import org.apache.camel.spi.UnitOfWork;
@@ -29,16 +30,21 @@ import org.apache.camel.spi.UnitOfWork;
 public interface ExtendedExchange extends Exchange {
 
     /**
-     * Clears the exchange from user data so it may be reused.
+     * Registers a task to run when this exchange is done.
+     */
+    void onDone(Function<Exchange, Boolean> task);
+
+    /**
+     * When the exchange is done being used.
      * <p/>
      * <b>Important:</b> This API is NOT intended for Camel end users, but used internally by Camel itself.
      */
-    void reset();
+    void done();
 
     /**
-     * Sets the created timestamp
+     * Resets the exchange for reuse with the given created timestamp;
      */
-    void setCreated(long created);
+    void reset(long created);
 
     /**
      * Sets the endpoint which originated this message exchange. This method should typically only be called by

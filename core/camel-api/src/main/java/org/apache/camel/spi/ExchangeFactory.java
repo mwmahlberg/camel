@@ -67,7 +67,13 @@ public interface ExchangeFactory {
      */
     Exchange create(Endpoint fromEndpoint, boolean autoRelease);
 
-    default void release(Exchange exchange) {
-        // noop
+    /**
+     * Releases the exchange back into the pool
+     *
+     * @param  exchange the exchange
+     * @return          true if released into the pool, or false if something went wrong and the exchange was discarded
+     */
+    default boolean release(Exchange exchange) {
+        return true;
     }
 }

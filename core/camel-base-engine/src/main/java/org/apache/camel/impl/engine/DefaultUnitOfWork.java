@@ -32,7 +32,6 @@ import org.apache.camel.ExtendedExchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import org.apache.camel.Route;
-import org.apache.camel.Service;
 import org.apache.camel.spi.InflightRepository;
 import org.apache.camel.spi.Synchronization;
 import org.apache.camel.spi.SynchronizationVetoable;
@@ -47,7 +46,7 @@ import org.slf4j.LoggerFactory;
 /**
  * The default implementation of {@link org.apache.camel.spi.UnitOfWork}
  */
-public class DefaultUnitOfWork implements UnitOfWork, Service {
+public class DefaultUnitOfWork implements UnitOfWork {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultUnitOfWork.class);
 
     // instances used by MDCUnitOfWork
@@ -81,7 +80,7 @@ public class DefaultUnitOfWork implements UnitOfWork, Service {
         this.useBreadcrumb = useBreadcrumb;
         this.context = (ExtendedCamelContext) exchange.getContext();
         this.inflightRepository = inflightRepository;
-        onExchange(exchange);
+        doOnPrepare(exchange);
     }
 
     UnitOfWork newInstance(Exchange exchange) {
@@ -89,50 +88,57 @@ public class DefaultUnitOfWork implements UnitOfWork, Service {
     }
 
     @Override
-    public void onExchange(Exchange exchange) {
+    public boolean onPrepare(Exchange exchange) {
         if (this.exchange == null) {
-            // unit of work is reused, so setup for this exchange
-            this.exchange = exchange;
-
-            if (allowUseOriginalMessage) {
-                // special for JmsMessage as it can cause it to loose headers later.
-                if (exchange.getIn().getClass().getName().equals("org.apache.camel.component.jms.JmsMessage")) {
-                    this.originalInMessage = new DefaultMessage(context);
-                    this.originalInMessage.setBody(exchange.getIn().getBody());
-                    this.originalInMessage.getHeaders().putAll(exchange.getIn().getHeaders());
-                } else {
-                    this.originalInMessage = exchange.getIn().copy();
-                }
-                // must preserve exchange on the original in message
-                if (this.originalInMessage instanceof MessageSupport) {
-                    ((MessageSupport) this.originalInMessage).setExchange(exchange);
-                }
-            }
-
-            // inject breadcrumb header if enabled
-            if (useBreadcrumb) {
-                // create or use existing breadcrumb
-                String breadcrumbId = exchange.getIn().getHeader(Exchange.BREADCRUMB_ID, String.class);
-                if (breadcrumbId == null) {
-                    // no existing breadcrumb, so create a new one based on the exchange id
-                    breadcrumbId = exchange.getExchangeId();
-                    exchange.getIn().setHeader(Exchange.BREADCRUMB_ID, breadcrumbId);
-                }
-            }
-
-            // fire event
-            if (context.isEventNotificationApplicable()) {
-                try {
-                    EventHelper.notifyExchangeCreated(context, exchange);
-                } catch (Throwable e) {
-                    // must catch exceptions to ensure the exchange is not failing due to notification event failed
-                    log.warn("Exception occurred during event notification. This exception will be ignored.", e);
-                }
-            }
-
-            // register to inflight registry
-            inflightRepository.add(exchange);
+            doOnPrepare(exchange);
+            return true;
+        } else {
+            return false;
         }
+    }
+
+    private void doOnPrepare(Exchange exchange) {
+        // unit of work is reused, so setup for this exchange
+        this.exchange = exchange;
+
+        if (allowUseOriginalMessage) {
+            // special for JmsMessage as it can cause it to loose headers later.
+            if (exchange.getIn().getClass().getName().equals("org.apache.camel.component.jms.JmsMessage")) {
+                this.originalInMessage = new DefaultMessage(context);
+                this.originalInMessage.setBody(exchange.getIn().getBody());
+                this.originalInMessage.getHeaders().putAll(exchange.getIn().getHeaders());
+            } else {
+                this.originalInMessage = exchange.getIn().copy();
+            }
+            // must preserve exchange on the original in message
+            if (this.originalInMessage instanceof MessageSupport) {
+                ((MessageSupport) this.originalInMessage).setExchange(exchange);
+            }
+        }
+
+        // inject breadcrumb header if enabled
+        if (useBreadcrumb) {
+            // create or use existing breadcrumb
+            String breadcrumbId = exchange.getIn().getHeader(Exchange.BREADCRUMB_ID, String.class);
+            if (breadcrumbId == null) {
+                // no existing breadcrumb, so create a new one based on the exchange id
+                breadcrumbId = exchange.getExchangeId();
+                exchange.getIn().setHeader(Exchange.BREADCRUMB_ID, breadcrumbId);
+            }
+        }
+
+        // fire event
+        if (context.isEventNotificationApplicable()) {
+            try {
+                EventHelper.notifyExchangeCreated(context, exchange);
+            } catch (Throwable e) {
+                // must catch exceptions to ensure the exchange is not failing due to notification event failed
+                log.warn("Exception occurred during event notification. This exception will be ignored.", e);
+            }
+        }
+
+        // register to inflight registry
+        inflightRepository.add(exchange);
     }
 
     @Override
@@ -158,16 +164,6 @@ public class DefaultUnitOfWork implements UnitOfWork, Service {
         UnitOfWork answer = newInstance(childExchange);
         answer.setParentUnitOfWork(this);
         return answer;
-    }
-
-    @Override
-    public void start() {
-        // noop
-    }
-
-    @Override
-    public void stop() {
-        // noop
     }
 
     @Override
@@ -249,6 +245,14 @@ public class DefaultUnitOfWork implements UnitOfWork, Service {
                 // must catch exceptions to ensure synchronizations is also invoked
                 log.warn("Exception occurred during event notification. This exception will be ignored.", e);
             }
+        }
+
+        // the exchange is now done
+        try {
+            exchange.adapt(ExtendedExchange.class).done();
+        } catch (Throwable e) {
+            // must catch exceptions to ensure synchronizations is also invoked
+            log.warn("Exception occurred during exchange done. This exception will be ignored.", e);
         }
     }
 

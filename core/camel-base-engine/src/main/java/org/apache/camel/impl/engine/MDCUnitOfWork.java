@@ -87,13 +87,6 @@ public class MDCUnitOfWork extends DefaultUnitOfWork {
     }
 
     @Override
-    public void stop() {
-        super.stop();
-        // and remove when stopping
-        clear();
-    }
-
-    @Override
     public void pushRoute(Route route) {
         super.pushRoute(route);
         if (route != null) {
