@@ -249,7 +249,7 @@ public class DefaultUnitOfWork implements UnitOfWork {
 
         // the exchange is now done
         try {
-            exchange.adapt(ExtendedExchange.class).done();
+            exchange.adapt(ExtendedExchange.class).done(false);
         } catch (Throwable e) {
             // must catch exceptions to ensure synchronizations is also invoked
             log.warn("Exception occurred during exchange done. This exception will be ignored.", e);

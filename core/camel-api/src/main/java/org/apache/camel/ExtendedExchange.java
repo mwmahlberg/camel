@@ -31,6 +31,8 @@ public interface ExtendedExchange extends Exchange {
 
     /**
      * Registers a task to run when this exchange is done.
+     * <p/>
+     * <b>Important:</b> This API is NOT intended for Camel end users, but used internally by Camel itself.
      */
     void onDone(Function<Exchange, Boolean> task);
 
@@ -39,12 +41,28 @@ public interface ExtendedExchange extends Exchange {
      * <p/>
      * <b>Important:</b> This API is NOT intended for Camel end users, but used internally by Camel itself.
      */
-    void done();
+    void done(boolean forced);
 
     /**
      * Resets the exchange for reuse with the given created timestamp;
+     * <p/>
+     * <b>Important:</b> This API is NOT intended for Camel end users, but used internally by Camel itself.
      */
     void reset(long created);
+
+    /**
+     * Whether this exchange was created to auto release when its unit of work is done
+     * <p/>
+     * <b>Important:</b> This API is NOT intended for Camel end users, but used internally by Camel itself.
+     */
+    void setAutoRelease(boolean autoRelease);
+
+    /**
+     * Whether this exchange was created to auto release when its unit of work is done
+     * <p/>
+     * <b>Important:</b> This API is NOT intended for Camel end users, but used internally by Camel itself.
+     */
+    boolean isAutoRelease();
 
     /**
      * Sets the endpoint which originated this message exchange. This method should typically only be called by

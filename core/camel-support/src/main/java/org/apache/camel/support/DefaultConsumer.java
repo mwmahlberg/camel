@@ -136,10 +136,8 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
     public void releaseExchange(Exchange exchange, boolean autoRelease) {
         if (exchange != null) {
             if (!autoRelease) {
-                // we must manually done the exchange
-                // TODO: hack
-                exchange.adapt(ExtendedExchange.class).onDone(e -> true);
-                exchange.adapt(ExtendedExchange.class).done();
+                // if not auto release we must manually force done
+                exchange.adapt(ExtendedExchange.class).done(true);
             }
             exchangeFactory.release(exchange);
         }

@@ -72,6 +72,7 @@ public final class DefaultExchange implements ExtendedExchange {
     private boolean interruptable = true;
     private boolean redeliveryExhausted;
     private Boolean errorHandlerHandled;
+    private boolean autoRelease;
 
     public DefaultExchange(CamelContext context) {
         this.context = context;
@@ -123,15 +124,21 @@ public final class DefaultExchange implements ExtendedExchange {
         }
     }
 
+    public boolean isAutoRelease() {
+        return autoRelease;
+    }
+
+    public void setAutoRelease(boolean autoRelease) {
+        this.autoRelease = autoRelease;
+    }
+
     @Override
     public void onDone(Function<Exchange, Boolean> task) {
         this.onDone = task;
     }
 
-    public void done() {
-        // only need to do this if there is an onDone task
-        // and use created flag to avoid doing done more than once
-        if (created > 0 && onDone != null) {
+    public void done(boolean forced) {
+        if (created > 0 && (forced || autoRelease)) {
             this.created = 0; // by setting to 0 we also flag that this exchange is done and needs to be reset to use again
             this.properties.clear();
             this.exchangeId = null;
@@ -162,7 +169,9 @@ public final class DefaultExchange implements ExtendedExchange {
             this.redeliveryExhausted = false;
             this.errorHandlerHandled = null;
 
-            onDone.apply(this);
+            if (onDone != null) {
+                onDone.apply(this);
+            }
         }
     }
 

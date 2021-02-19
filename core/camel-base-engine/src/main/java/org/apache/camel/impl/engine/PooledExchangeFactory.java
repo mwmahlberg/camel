@@ -100,6 +100,7 @@ public class PooledExchangeFactory extends ServiceSupport
             }
             // create a new exchange as there was no free from the pool
             ExtendedExchange answer = new DefaultExchange(camelContext);
+            answer.setAutoRelease(autoRelease);
             if (autoRelease) {
                 // the consumer will either always be in auto release mode or not, so its safe to initialize the task only once when the exchange is created
                 answer.onDone(this::release);
@@ -125,6 +126,7 @@ public class PooledExchangeFactory extends ServiceSupport
             }
             // create a new exchange as there was no free from the pool
             ExtendedExchange answer = new DefaultExchange(fromEndpoint);
+            answer.setAutoRelease(autoRelease);
             if (autoRelease) {
                 // the consumer will either always be in auto release mode or not, so its safe to initialize the task only once when the exchange is created
                 answer.onDone(this::release);
@@ -143,10 +145,11 @@ public class PooledExchangeFactory extends ServiceSupport
 
     @Override
     public boolean release(Exchange exchange) {
-        // reset exchange before returning to pool
         try {
+            // done exchange before returning back to pool
             ExtendedExchange ee = exchange.adapt(ExtendedExchange.class);
-            ee.done();
+            boolean force = !ee.isAutoRelease();
+            ee.done(force);
             ee.onDone(null);
 
             // only release back in pool if reset was success
