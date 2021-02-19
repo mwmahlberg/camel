@@ -52,6 +52,7 @@ public final class DefaultExchange implements ExtendedExchange {
     private final Map<String, Object> properties = new ConcurrentHashMap<>(8);
     private Class originalInClassType;
     private Message in;
+    private Message originalOut;
     private Message out;
     private Exception exception;
     private String exchangeId;
@@ -149,12 +150,14 @@ public final class DefaultExchange implements ExtendedExchange {
             } else {
                 this.in = null;
             }
-            this.out = null;
-            this.exception = null;
-            // reset uow
+            if (out != null) {
+                out.reset();
+                this.out = null;
+            }
             if (this.unitOfWork != null) {
                 this.unitOfWork.reset();
             }
+            this.exception = null;
             // reset pattern to original
             this.pattern = originalPattern;
             if (this.onCompletions != null) {
@@ -434,9 +437,14 @@ public final class DefaultExchange implements ExtendedExchange {
     public Message getOut() {
         // lazy create
         if (out == null) {
-            out = (in instanceof MessageSupport)
-                    ? ((MessageSupport) in).newInstance() : new DefaultMessage(getContext());
-            configureMessage(out);
+            if (originalOut != null) {
+                out = originalOut;
+            } else {
+                // we can only optimize OUT when its using a default message instance
+                out = new DefaultMessage(this);
+                configureMessage(out);
+                originalOut = out;
+            }
         }
         return out;
     }
@@ -467,7 +475,10 @@ public final class DefaultExchange implements ExtendedExchange {
     @Override
     public void setOut(Message out) {
         this.out = out;
-        configureMessage(out);
+        if (out != null) {
+            configureMessage(out);
+            this.originalOut = null; // we use custom out
+        }
     }
 
     @Override
