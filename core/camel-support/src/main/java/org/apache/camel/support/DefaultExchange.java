@@ -131,7 +131,7 @@ public final class DefaultExchange implements ExtendedExchange {
     public void done() {
         // only need to do this if there is an onDone task
         // and use created flag to avoid doing done more than once
-        if (created > 0) {
+        if (created > 0 && onDone != null) {
             this.created = 0; // by setting to 0 we also flag that this exchange is done and needs to be reset to use again
             this.properties.clear();
             this.exchangeId = null;
@@ -162,9 +162,7 @@ public final class DefaultExchange implements ExtendedExchange {
             this.redeliveryExhausted = false;
             this.errorHandlerHandled = null;
 
-            if (onDone != null) {
-                onDone.apply(this);
-            }
+            onDone.apply(this);
         }
     }
 

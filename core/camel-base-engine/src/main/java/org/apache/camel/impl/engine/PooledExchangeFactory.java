@@ -43,6 +43,8 @@ import org.slf4j.LoggerFactory;
 public class PooledExchangeFactory extends ServiceSupport
         implements ExchangeFactory, CamelContextAware, StaticService, NonManagedService {
 
+    // TODO: optimize onDone lambdas as they will be created per instance, and we can use static linked
+
     private static final Logger LOG = LoggerFactory.getLogger(PooledExchangeFactory.class);
 
     private final Consumer consumer;
@@ -101,6 +103,9 @@ public class PooledExchangeFactory extends ServiceSupport
             if (autoRelease) {
                 // the consumer will either always be in auto release mode or not, so its safe to initialize the task only once when the exchange is created
                 answer.onDone(this::release);
+            } else {
+                // we need to signal true
+                answer.onDone(e -> true);
             }
             return answer;
         } else {
@@ -126,6 +131,9 @@ public class PooledExchangeFactory extends ServiceSupport
             if (autoRelease) {
                 // the consumer will either always be in auto release mode or not, so its safe to initialize the task only once when the exchange is created
                 answer.onDone(this::release);
+            } else {
+                // we need to signal true
+                answer.onDone(e -> true);
             }
             return answer;
         } else {
