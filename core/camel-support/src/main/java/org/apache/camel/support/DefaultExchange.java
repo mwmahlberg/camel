@@ -50,6 +50,7 @@ public final class DefaultExchange implements ExtendedExchange {
     private long created;
     // optimize to create properties always and with a reasonable small size
     private final Map<String, Object> properties = new ConcurrentHashMap<>(8);
+    private Class originalInClassType;
     private Message in;
     private Message out;
     private Exception exception;
@@ -142,8 +143,12 @@ public final class DefaultExchange implements ExtendedExchange {
             this.created = 0; // by setting to 0 we also flag that this exchange is done and needs to be reset to use again
             this.properties.clear();
             this.exchangeId = null;
-            // TODO: optimize in/out to keep as default message (if original message is this kind)
-            this.in = null;
+            if (in != null && in.getClass() == originalInClassType) {
+                // okay we can reuse in
+                in.reset();
+            } else {
+                this.in = null;
+            }
             this.out = null;
             this.exception = null;
             // reset uow
@@ -396,6 +401,7 @@ public final class DefaultExchange implements ExtendedExchange {
     public Message getIn() {
         if (in == null) {
             in = new DefaultMessage(getContext());
+            originalInClassType = in.getClass();
             configureMessage(in);
         }
         return in;
@@ -419,6 +425,9 @@ public final class DefaultExchange implements ExtendedExchange {
     public void setIn(Message in) {
         this.in = in;
         configureMessage(in);
+        if (in != null) {
+            this.originalInClassType = in.getClass();
+        }
     }
 
     @Override
