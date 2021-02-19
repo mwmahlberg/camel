@@ -202,6 +202,12 @@ public class MDCUnitOfWork extends DefaultUnitOfWork {
     }
 
     @Override
+    public void reset() {
+        super.reset();
+        clear();
+    }
+
+    @Override
     public String toString() {
         return "MDCUnitOfWork";
     }

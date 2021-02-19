@@ -49,20 +49,16 @@ import org.slf4j.LoggerFactory;
  */
 public class DefaultUnitOfWork implements UnitOfWork, Service {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultUnitOfWork.class);
+
+    // instances used by MDCUnitOfWork
     final InflightRepository inflightRepository;
     final boolean allowUseOriginalMessage;
     final boolean useBreadcrumb;
 
-    // TODO: This implementation seems to have transformed itself into a to broad concern
-    //   where unit of work is doing a bit more work than the transactional aspect that ties
-    //   to its name. Maybe this implementation should be named ExchangeContext and we can
-    //   introduce a simpler UnitOfWork concept. This would also allow us to refactor the
-    //   SubUnitOfWork into a general parent/child unit of work concept. However this
-    //   requires API changes and thus is best kept for future Camel work
-    private final Deque<Route> routes = new ArrayDeque<>(8);
-    private final Exchange exchange;
     private final ExtendedCamelContext context;
+    private final Deque<Route> routes = new ArrayDeque<>(8);
     private Logger log;
+    private Exchange exchange;
     private List<Synchronization> synchronizations;
     private Message originalInMessage;
     private Set<Object> transactedBy;
@@ -80,51 +76,12 @@ public class DefaultUnitOfWork implements UnitOfWork, Service {
 
     public DefaultUnitOfWork(Exchange exchange, InflightRepository inflightRepository, boolean allowUseOriginalMessage,
                              boolean useBreadcrumb) {
-        this.exchange = exchange;
         this.log = LOG;
         this.allowUseOriginalMessage = allowUseOriginalMessage;
         this.useBreadcrumb = useBreadcrumb;
         this.context = (ExtendedCamelContext) exchange.getContext();
         this.inflightRepository = inflightRepository;
-
-        if (allowUseOriginalMessage) {
-            // special for JmsMessage as it can cause it to loose headers later.
-            if (exchange.getIn().getClass().getName().equals("org.apache.camel.component.jms.JmsMessage")) {
-                this.originalInMessage = new DefaultMessage(context);
-                this.originalInMessage.setBody(exchange.getIn().getBody());
-                this.originalInMessage.getHeaders().putAll(exchange.getIn().getHeaders());
-            } else {
-                this.originalInMessage = exchange.getIn().copy();
-            }
-            // must preserve exchange on the original in message
-            if (this.originalInMessage instanceof MessageSupport) {
-                ((MessageSupport) this.originalInMessage).setExchange(exchange);
-            }
-        }
-
-        // inject breadcrumb header if enabled
-        if (useBreadcrumb) {
-            // create or use existing breadcrumb
-            String breadcrumbId = exchange.getIn().getHeader(Exchange.BREADCRUMB_ID, String.class);
-            if (breadcrumbId == null) {
-                // no existing breadcrumb, so create a new one based on the exchange id
-                breadcrumbId = exchange.getExchangeId();
-                exchange.getIn().setHeader(Exchange.BREADCRUMB_ID, breadcrumbId);
-            }
-        }
-
-        // fire event
-        if (context.isEventNotificationApplicable()) {
-            try {
-                EventHelper.notifyExchangeCreated(context, exchange);
-            } catch (Throwable e) {
-                // must catch exceptions to ensure the exchange is not failing due to notification event failed
-                log.warn("Exception occurred during event notification. This exception will be ignored.", e);
-            }
-        }
-
-        // register to inflight registry
-        inflightRepository.add(exchange);
+        onExchange(exchange);
     }
 
     UnitOfWork newInstance(Exchange exchange) {
@@ -132,7 +89,55 @@ public class DefaultUnitOfWork implements UnitOfWork, Service {
     }
 
     @Override
+    public void onExchange(Exchange exchange) {
+        if (this.exchange == null) {
+            // unit of work is reused, so setup for this exchange
+            this.exchange = exchange;
+
+            if (allowUseOriginalMessage) {
+                // special for JmsMessage as it can cause it to loose headers later.
+                if (exchange.getIn().getClass().getName().equals("org.apache.camel.component.jms.JmsMessage")) {
+                    this.originalInMessage = new DefaultMessage(context);
+                    this.originalInMessage.setBody(exchange.getIn().getBody());
+                    this.originalInMessage.getHeaders().putAll(exchange.getIn().getHeaders());
+                } else {
+                    this.originalInMessage = exchange.getIn().copy();
+                }
+                // must preserve exchange on the original in message
+                if (this.originalInMessage instanceof MessageSupport) {
+                    ((MessageSupport) this.originalInMessage).setExchange(exchange);
+                }
+            }
+
+            // inject breadcrumb header if enabled
+            if (useBreadcrumb) {
+                // create or use existing breadcrumb
+                String breadcrumbId = exchange.getIn().getHeader(Exchange.BREADCRUMB_ID, String.class);
+                if (breadcrumbId == null) {
+                    // no existing breadcrumb, so create a new one based on the exchange id
+                    breadcrumbId = exchange.getExchangeId();
+                    exchange.getIn().setHeader(Exchange.BREADCRUMB_ID, breadcrumbId);
+                }
+            }
+
+            // fire event
+            if (context.isEventNotificationApplicable()) {
+                try {
+                    EventHelper.notifyExchangeCreated(context, exchange);
+                } catch (Throwable e) {
+                    // must catch exceptions to ensure the exchange is not failing due to notification event failed
+                    log.warn("Exception occurred during event notification. This exception will be ignored.", e);
+                }
+            }
+
+            // register to inflight registry
+            inflightRepository.add(exchange);
+        }
+    }
+
+    @Override
     public void reset() {
+        this.exchange = null;
         routes.clear();
         if (synchronizations != null) {
             synchronizations.clear();

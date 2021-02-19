@@ -650,22 +650,24 @@ public class CamelInternalProcessor extends DelegateAsyncProcessor implements In
 
             // only return UnitOfWork if we created a new as then its us that handle the lifecycle to done the created UoW
             UnitOfWork created = null;
+            UnitOfWork uow = exchange.getUnitOfWork();
 
-            if (exchange.getUnitOfWork() == null) {
+            if (uow == null) {
                 // If there is no existing UoW, then we should start one and
                 // terminate it once processing is completed for the exchange.
                 created = createUnitOfWork(exchange);
                 ExtendedExchange ee = (ExtendedExchange) exchange;
                 ee.setUnitOfWork(created);
                 created.start();
+                uow = created;
+            } else {
+                // reuse existing exchange
+                uow.onExchange(exchange);
             }
 
             // for any exchange we should push/pop route context so we can keep track of which route we are routing
             if (route != null) {
-                UnitOfWork existing = exchange.getUnitOfWork();
-                if (existing != null) {
-                    existing.pushRoute(route);
-                }
+                uow.pushRoute(route);
             }
 
             return created;

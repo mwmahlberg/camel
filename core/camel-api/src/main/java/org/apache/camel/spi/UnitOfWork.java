@@ -48,6 +48,13 @@ public interface UnitOfWork extends Service {
     void reset();
 
     /**
+     * Prepares this unit of work with the given input {@link Exchange}
+     *
+     * @param exchange the exchange
+     */
+    void onExchange(Exchange exchange);
+
+    /**
      * Adds a synchronization hook
      *
      * @param synchronization the hook

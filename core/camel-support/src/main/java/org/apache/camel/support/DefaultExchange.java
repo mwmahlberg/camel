@@ -53,7 +53,7 @@ public final class DefaultExchange implements ExtendedExchange {
     private Exception exception;
     private String exchangeId;
     private UnitOfWork unitOfWork;
-    private ExchangePattern originalPattern;
+    private final ExchangePattern originalPattern;
     private ExchangePattern pattern;
     private Endpoint fromEndpoint;
     private String fromRouteId;
@@ -125,16 +125,20 @@ public final class DefaultExchange implements ExtendedExchange {
         this.properties.clear();
         this.exchangeId = null;
         this.created = 0;
+        // TODO: optimize in/out to keep as default message (if original message is this kind)
         this.in = null;
         this.out = null;
         this.exception = null;
-        this.unitOfWork = null;
+        // reset uow
+        if (this.unitOfWork != null) {
+            this.unitOfWork.reset();
+        }
         // reset pattern to original
         this.pattern = originalPattern;
-        // do not reset endpoint/fromRouteId as it would be the same consumer/endpoint again
         if (this.onCompletions != null) {
             this.onCompletions.clear();
         }
+        // do not reset endpoint/fromRouteId as it would be the same consumer/endpoint again
         this.externalRedelivered = null;
         this.historyNodeId = null;
         this.historyNodeLabel = null;
