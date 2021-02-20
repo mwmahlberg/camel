@@ -19,17 +19,9 @@ package org.apache.camel.impl.engine;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.camel.CamelContext;
-import org.apache.camel.CamelContextAware;
-import org.apache.camel.Consumer;
-import org.apache.camel.Endpoint;
-import org.apache.camel.Exchange;
-import org.apache.camel.Experimental;
-import org.apache.camel.ExtendedExchange;
-import org.apache.camel.NonManagedService;
-import org.apache.camel.StaticService;
+import org.apache.camel.*;
 import org.apache.camel.spi.ExchangeFactory;
-import org.apache.camel.support.DefaultExchange;
+import org.apache.camel.support.DefaultPooledExchange;
 import org.apache.camel.support.SynchronizationAdapter;
 import org.apache.camel.support.service.ServiceSupport;
 import org.apache.camel.util.URISupport;
@@ -99,7 +91,7 @@ public class PooledExchangeFactory extends ServiceSupport
                 created.incrementAndGet();
             }
             // create a new exchange as there was no free from the pool
-            ExtendedExchange answer = new DefaultExchange(camelContext);
+            PooledExchange answer = new DefaultPooledExchange(camelContext);
             answer.setAutoRelease(autoRelease);
             if (autoRelease) {
                 // the consumer will either always be in auto release mode or not, so its safe to initialize the task only once when the exchange is created
@@ -111,7 +103,7 @@ public class PooledExchangeFactory extends ServiceSupport
                 acquired.incrementAndGet();
             }
             // reset exchange for reuse
-            ExtendedExchange ee = exchange.adapt(ExtendedExchange.class);
+            PooledExchange ee = exchange.adapt(PooledExchange.class);
             ee.reset(System.currentTimeMillis());
         }
         return exchange;
@@ -125,7 +117,7 @@ public class PooledExchangeFactory extends ServiceSupport
                 created.incrementAndGet();
             }
             // create a new exchange as there was no free from the pool
-            ExtendedExchange answer = new DefaultExchange(fromEndpoint);
+            PooledExchange answer = new DefaultPooledExchange(fromEndpoint);
             answer.setAutoRelease(autoRelease);
             if (autoRelease) {
                 // the consumer will either always be in auto release mode or not, so its safe to initialize the task only once when the exchange is created
@@ -137,7 +129,7 @@ public class PooledExchangeFactory extends ServiceSupport
                 acquired.incrementAndGet();
             }
             // reset exchange for reuse
-            ExtendedExchange ee = exchange.adapt(ExtendedExchange.class);
+            PooledExchange ee = exchange.adapt(PooledExchange.class);
             ee.reset(System.currentTimeMillis());
         }
         return exchange;
@@ -147,7 +139,7 @@ public class PooledExchangeFactory extends ServiceSupport
     public boolean release(Exchange exchange) {
         try {
             // done exchange before returning back to pool
-            ExtendedExchange ee = exchange.adapt(ExtendedExchange.class);
+            PooledExchange ee = exchange.adapt(PooledExchange.class);
             boolean force = !ee.isAutoRelease();
             ee.done(force);
             ee.onDone(null);

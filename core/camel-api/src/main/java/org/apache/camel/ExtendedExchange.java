@@ -18,7 +18,6 @@ package org.apache.camel;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 import org.apache.camel.spi.Synchronization;
 import org.apache.camel.spi.UnitOfWork;
@@ -28,41 +27,6 @@ import org.apache.camel.spi.UnitOfWork;
  * internally by Camel for optimization purposes, SPI, custom components, or more advanced used-cases with Camel.
  */
 public interface ExtendedExchange extends Exchange {
-
-    /**
-     * Registers a task to run when this exchange is done.
-     * <p/>
-     * <b>Important:</b> This API is NOT intended for Camel end users, but used internally by Camel itself.
-     */
-    void onDone(Function<Exchange, Boolean> task);
-
-    /**
-     * When the exchange is done being used.
-     * <p/>
-     * <b>Important:</b> This API is NOT intended for Camel end users, but used internally by Camel itself.
-     */
-    void done(boolean forced);
-
-    /**
-     * Resets the exchange for reuse with the given created timestamp;
-     * <p/>
-     * <b>Important:</b> This API is NOT intended for Camel end users, but used internally by Camel itself.
-     */
-    void reset(long created);
-
-    /**
-     * Whether this exchange was created to auto release when its unit of work is done
-     * <p/>
-     * <b>Important:</b> This API is NOT intended for Camel end users, but used internally by Camel itself.
-     */
-    void setAutoRelease(boolean autoRelease);
-
-    /**
-     * Whether this exchange was created to auto release when its unit of work is done
-     * <p/>
-     * <b>Important:</b> This API is NOT intended for Camel end users, but used internally by Camel itself.
-     */
-    boolean isAutoRelease();
 
     /**
      * Sets the endpoint which originated this message exchange. This method should typically only be called by

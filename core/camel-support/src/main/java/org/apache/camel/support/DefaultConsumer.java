@@ -16,15 +16,7 @@
  */
 package org.apache.camel.support;
 
-import org.apache.camel.AsyncProcessor;
-import org.apache.camel.Consumer;
-import org.apache.camel.Endpoint;
-import org.apache.camel.Exchange;
-import org.apache.camel.ExtendedCamelContext;
-import org.apache.camel.ExtendedExchange;
-import org.apache.camel.Processor;
-import org.apache.camel.Route;
-import org.apache.camel.RouteAware;
+import org.apache.camel.*;
 import org.apache.camel.spi.ExceptionHandler;
 import org.apache.camel.spi.ExchangeFactory;
 import org.apache.camel.spi.RouteIdAware;
@@ -137,7 +129,7 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
         if (exchange != null) {
             if (!autoRelease) {
                 // if not auto release we must manually force done
-                exchange.adapt(ExtendedExchange.class).done(true);
+                exchange.adapt(PooledExchange.class).done(true);
             }
             exchangeFactory.release(exchange);
         }

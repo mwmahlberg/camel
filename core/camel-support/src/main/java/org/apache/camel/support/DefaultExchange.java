@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Function;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.CamelExecutionException;
@@ -43,51 +42,46 @@ import org.apache.camel.util.ObjectHelper;
 /**
  * The default and only implementation of {@link Exchange}.
  */
-public final class DefaultExchange implements ExtendedExchange {
+public class DefaultExchange implements ExtendedExchange {
+
+    // TODO: AbstractExchange and move somewhere, and have DefaultExchange as thin
 
     private final CamelContext context;
-    private Function<Exchange, Boolean> onDone;
-    private long created;
+    long created;
     // optimize to create properties always and with a reasonable small size
-    private final Map<String, Object> properties = new ConcurrentHashMap<>(8);
-    private Class originalInClassType;
-    private Message in;
-    private Message originalOut;
-    private Message out;
-    private Exception exception;
-    private String exchangeId;
-    private UnitOfWork unitOfWork;
-    private final ExchangePattern originalPattern;
-    private ExchangePattern pattern;
-    private Endpoint fromEndpoint;
-    private String fromRouteId;
-    private List<Synchronization> onCompletions;
-    private Boolean externalRedelivered;
-    private String historyNodeId;
-    private String historyNodeLabel;
-    private boolean transacted;
-    private boolean routeStop;
-    private boolean rollbackOnly;
-    private boolean rollbackOnlyLast;
-    private boolean notifyEvent;
-    private boolean interrupted;
-    private boolean interruptable = true;
-    private boolean redeliveryExhausted;
-    private Boolean errorHandlerHandled;
-    private boolean autoRelease;
+    final Map<String, Object> properties = new ConcurrentHashMap<>(8);
+    Message in;
+    Message out;
+    Exception exception;
+    String exchangeId;
+    UnitOfWork unitOfWork;
+    ExchangePattern pattern;
+    Endpoint fromEndpoint;
+    String fromRouteId;
+    List<Synchronization> onCompletions;
+    Boolean externalRedelivered;
+    String historyNodeId;
+    String historyNodeLabel;
+    boolean transacted;
+    boolean routeStop;
+    boolean rollbackOnly;
+    boolean rollbackOnlyLast;
+    boolean notifyEvent;
+    boolean interrupted;
+    boolean interruptable = true;
+    boolean redeliveryExhausted;
+    Boolean errorHandlerHandled;
 
     public DefaultExchange(CamelContext context) {
         this.context = context;
         this.pattern = ExchangePattern.InOnly;
         this.created = System.currentTimeMillis();
-        this.originalPattern = this.pattern;
     }
 
     public DefaultExchange(CamelContext context, ExchangePattern pattern) {
         this.context = context;
         this.pattern = pattern;
         this.created = System.currentTimeMillis();
-        this.originalPattern = this.pattern;
     }
 
     public DefaultExchange(Exchange parent) {
@@ -97,7 +91,6 @@ public final class DefaultExchange implements ExtendedExchange {
         this.fromEndpoint = parent.getFromEndpoint();
         this.fromRouteId = parent.getFromRouteId();
         this.unitOfWork = parent.getUnitOfWork();
-        this.originalPattern = this.pattern;
     }
 
     public DefaultExchange(Endpoint fromEndpoint) {
@@ -105,7 +98,6 @@ public final class DefaultExchange implements ExtendedExchange {
         this.pattern = ExchangePattern.InOnly;
         this.created = System.currentTimeMillis();
         this.fromEndpoint = fromEndpoint;
-        this.originalPattern = this.pattern;
     }
 
     public DefaultExchange(Endpoint fromEndpoint, ExchangePattern pattern) {
@@ -113,7 +105,6 @@ public final class DefaultExchange implements ExtendedExchange {
         this.pattern = pattern;
         this.created = System.currentTimeMillis();
         this.fromEndpoint = fromEndpoint;
-        this.originalPattern = this.pattern;
     }
 
     @Override
@@ -124,68 +115,6 @@ public final class DefaultExchange implements ExtendedExchange {
         } else {
             return "Exchange[]";
         }
-    }
-
-    public boolean isAutoRelease() {
-        return autoRelease;
-    }
-
-    public void setAutoRelease(boolean autoRelease) {
-        this.autoRelease = autoRelease;
-    }
-
-    @Override
-    public void onDone(Function<Exchange, Boolean> task) {
-        this.onDone = task;
-    }
-
-    public void done(boolean forced) {
-        if (created > 0 && (forced || autoRelease)) {
-            this.created = 0; // by setting to 0 we also flag that this exchange is done and needs to be reset to use again
-            this.properties.clear();
-            this.exchangeId = null;
-            if (in != null && in.getClass() == originalInClassType) {
-                // okay we can reuse in
-                in.reset();
-            } else {
-                this.in = null;
-            }
-            if (out != null) {
-                out.reset();
-                this.out = null;
-            }
-            if (this.unitOfWork != null) {
-                this.unitOfWork.reset();
-            }
-            this.exception = null;
-            // reset pattern to original
-            this.pattern = originalPattern;
-            if (this.onCompletions != null) {
-                this.onCompletions.clear();
-            }
-            // do not reset endpoint/fromRouteId as it would be the same consumer/endpoint again
-            this.externalRedelivered = null;
-            this.historyNodeId = null;
-            this.historyNodeLabel = null;
-            this.transacted = false;
-            this.routeStop = false;
-            this.rollbackOnly = false;
-            this.rollbackOnlyLast = false;
-            this.notifyEvent = false;
-            this.interrupted = false;
-            this.interruptable = true;
-            this.redeliveryExhausted = false;
-            this.errorHandlerHandled = null;
-
-            if (onDone != null) {
-                onDone.apply(this);
-            }
-        }
-    }
-
-    @Override
-    public void reset(long created) {
-        this.created = created;
     }
 
     @Override
@@ -404,7 +333,6 @@ public final class DefaultExchange implements ExtendedExchange {
     public Message getIn() {
         if (in == null) {
             in = new DefaultMessage(getContext());
-            originalInClassType = in.getClass();
             configureMessage(in);
         }
         return in;
@@ -428,23 +356,15 @@ public final class DefaultExchange implements ExtendedExchange {
     public void setIn(Message in) {
         this.in = in;
         configureMessage(in);
-        if (in != null) {
-            this.originalInClassType = in.getClass();
-        }
     }
 
     @Override
     public Message getOut() {
         // lazy create
         if (out == null) {
-            if (originalOut != null) {
-                out = originalOut;
-            } else {
-                // we can only optimize OUT when its using a default message instance
-                out = new DefaultMessage(this);
-                configureMessage(out);
-                originalOut = out;
-            }
+            out = (in instanceof MessageSupport)
+                    ? ((MessageSupport) in).newInstance() : new DefaultMessage(getContext());
+            configureMessage(out);
         }
         return out;
     }
@@ -475,10 +395,7 @@ public final class DefaultExchange implements ExtendedExchange {
     @Override
     public void setOut(Message out) {
         this.out = out;
-        if (out != null) {
-            configureMessage(out);
-            this.originalOut = null; // we use custom out
-        }
+        configureMessage(out);
     }
 
     @Override
@@ -645,7 +562,7 @@ public final class DefaultExchange implements ExtendedExchange {
     @Override
     public void setUnitOfWork(UnitOfWork unitOfWork) {
         this.unitOfWork = unitOfWork;
-        if (unitOfWork != null && onCompletions != null && !onCompletions.isEmpty()) {
+        if (unitOfWork != null && onCompletions != null) {
             // now an unit of work has been assigned so add the on completions
             // we might have registered already
             for (Synchronization onCompletion : onCompletions) {
@@ -654,6 +571,7 @@ public final class DefaultExchange implements ExtendedExchange {
             // cleanup the temporary on completion list as they now have been registered
             // on the unit of work
             onCompletions.clear();
+            onCompletions = null;
         }
     }
 
@@ -667,7 +585,7 @@ public final class DefaultExchange implements ExtendedExchange {
             }
             onCompletions.add(onCompletion);
         } else {
-            unitOfWork.addSynchronization(onCompletion);
+            getUnitOfWork().addSynchronization(onCompletion);
         }
     }
 
@@ -684,12 +602,13 @@ public final class DefaultExchange implements ExtendedExchange {
 
     @Override
     public void handoverCompletions(Exchange target) {
-        if (onCompletions != null && !onCompletions.isEmpty()) {
+        if (onCompletions != null) {
             for (Synchronization onCompletion : onCompletions) {
                 target.adapt(ExtendedExchange.class).addOnCompletion(onCompletion);
             }
             // cleanup the temporary on completion list as they have been handed over
             onCompletions.clear();
+            onCompletions = null;
         } else if (unitOfWork != null) {
             // let unit of work handover
             unitOfWork.handoverSynchronization(target);
@@ -699,9 +618,10 @@ public final class DefaultExchange implements ExtendedExchange {
     @Override
     public List<Synchronization> handoverCompletions() {
         List<Synchronization> answer = null;
-        if (onCompletions != null && !onCompletions.isEmpty()) {
+        if (onCompletions != null) {
             answer = new ArrayList<>(onCompletions);
             onCompletions.clear();
+            onCompletions = null;
         }
         return answer;
     }
