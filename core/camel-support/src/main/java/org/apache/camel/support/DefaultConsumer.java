@@ -136,9 +136,9 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
     @Override
     public void releaseExchange(Exchange exchange, boolean autoRelease) {
         if (exchange != null) {
-            if (!autoRelease) {
+            if (!autoRelease && exchange instanceof PooledExchange) {
                 // if not auto release we must manually force done
-                exchange.adapt(PooledExchange.class).done(true);
+                ((PooledExchange) exchange).done(true);
             }
             exchangeFactory.release(exchange);
         }
