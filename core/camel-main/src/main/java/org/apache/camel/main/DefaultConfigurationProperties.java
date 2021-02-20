@@ -88,6 +88,9 @@ public abstract class DefaultConfigurationProperties<T> {
     private String routesIncludePattern = "classpath:camel/*.xml,classpath:camel-template/*.xml,classpath:camel-rest/*.xml";
     private String routesExcludePattern;
     private boolean lightweight;
+    @Metadata(defaultValue = "default", enums = "default,pooled")
+    private String exchangeFactory = "default";
+    private boolean exchangeFactoryStatisticsEnabled;
     // route controller
     @Metadata(defaultValue = "DEBUG")
     @Deprecated
@@ -925,6 +928,34 @@ public abstract class DefaultConfigurationProperties<T> {
     @Experimental
     public void setLightweight(boolean lightweight) {
         this.lightweight = lightweight;
+    }
+
+    @Experimental
+    public String getExchangeFactory() {
+        return exchangeFactory;
+    }
+
+    /**
+     * Experimental: Controls whether to pool (reuse) exchanges or create new fresh exchanges (default). Using pooled
+     * will reduce JVM garbage collection overhead by avoiding to re-create Exchange instances per message each consumer
+     * receives.
+     */
+    @Experimental
+    public void setExchangeFactory(String exchangeFactory) {
+        this.exchangeFactory = exchangeFactory;
+    }
+
+    @Experimental
+    public boolean isExchangeFactoryStatisticsEnabled() {
+        return exchangeFactoryStatisticsEnabled;
+    }
+
+    /**
+     * Configures whether statistics is enabled on exchange factory.
+     */
+    @Experimental
+    public void setExchangeFactoryStatisticsEnabled(boolean exchangeFactoryStatisticsEnabled) {
+        this.exchangeFactoryStatisticsEnabled = exchangeFactoryStatisticsEnabled;
     }
 
     @Deprecated
