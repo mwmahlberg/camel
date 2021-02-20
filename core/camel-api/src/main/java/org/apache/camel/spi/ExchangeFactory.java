@@ -35,10 +35,6 @@ import org.apache.camel.Exchange;
  */
 public interface ExchangeFactory {
 
-    // TODO: release from extended exchange without onCompletion (overhead)
-    // TODO: reuse unit of work (expensive to create)
-    // TODO: release via DoneUoW in less expensive way
-
     /**
      * Service factory key.
      */
