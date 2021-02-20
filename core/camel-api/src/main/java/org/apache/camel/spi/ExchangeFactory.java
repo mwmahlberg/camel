@@ -72,4 +72,15 @@ public interface ExchangeFactory {
     default boolean release(Exchange exchange) {
         return true;
     }
+
+    /**
+     * Whether statistics is enabled.
+     */
+    boolean isStatisticsEnabled();
+
+    /**
+     * Whether statistics is enabled.
+     */
+    void setStatisticsEnabled(boolean statisticsEnabled);
+
 }

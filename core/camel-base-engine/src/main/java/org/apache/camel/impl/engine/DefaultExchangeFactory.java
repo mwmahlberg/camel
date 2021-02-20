@@ -16,14 +16,18 @@
  */
 package org.apache.camel.impl.engine;
 
-import org.apache.camel.*;
+import org.apache.camel.CamelContext;
+import org.apache.camel.CamelContextAware;
+import org.apache.camel.Consumer;
+import org.apache.camel.Endpoint;
+import org.apache.camel.Exchange;
 import org.apache.camel.spi.ExchangeFactory;
 import org.apache.camel.support.DefaultExchange;
 
 /**
  * Default {@link ExchangeFactory} that creates a new {@link Exchange} instance.
  */
-public class DefaultExchangeFactory implements ExchangeFactory, CamelContextAware {
+public final class DefaultExchangeFactory implements ExchangeFactory, CamelContextAware {
 
     private CamelContext camelContext;
 
@@ -51,6 +55,16 @@ public class DefaultExchangeFactory implements ExchangeFactory, CamelContextAwar
     @Override
     public Exchange create(Endpoint fromEndpoint, boolean autoRelease) {
         return new DefaultExchange(fromEndpoint);
+    }
+
+    @Override
+    public boolean isStatisticsEnabled() {
+        return false;
+    }
+
+    @Override
+    public void setStatisticsEnabled(boolean statisticsEnabled) {
+        // not in use
     }
 
 }
