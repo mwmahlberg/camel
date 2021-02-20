@@ -18,12 +18,17 @@ package org.apache.camel.support;
 
 import java.util.function.Function;
 
-import org.apache.camel.*;
+import org.apache.camel.CamelContext;
+import org.apache.camel.Endpoint;
+import org.apache.camel.Exchange;
+import org.apache.camel.ExchangePattern;
+import org.apache.camel.Message;
+import org.apache.camel.PooledExchange;
 
 /**
- * The default {@link PooledExchange}.
+ * The default and only implementation of {@link PooledExchange}.
  */
-public final class DefaultPooledExchange extends DefaultExchange implements PooledExchange {
+public final class DefaultPooledExchange extends AbstractExchange implements PooledExchange {
 
     private Function<Exchange, Boolean> onDone;
     private Class originalInClassType;

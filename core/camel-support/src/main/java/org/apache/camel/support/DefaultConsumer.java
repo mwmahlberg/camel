@@ -16,7 +16,16 @@
  */
 package org.apache.camel.support;
 
-import org.apache.camel.*;
+import org.apache.camel.AsyncProcessor;
+import org.apache.camel.Consumer;
+import org.apache.camel.Endpoint;
+import org.apache.camel.Exchange;
+import org.apache.camel.ExtendedCamelContext;
+import org.apache.camel.ExtendedExchange;
+import org.apache.camel.PooledExchange;
+import org.apache.camel.Processor;
+import org.apache.camel.Route;
+import org.apache.camel.RouteAware;
 import org.apache.camel.spi.ExceptionHandler;
 import org.apache.camel.spi.ExchangeFactory;
 import org.apache.camel.spi.RouteIdAware;
