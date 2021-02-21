@@ -29,7 +29,6 @@ import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.impl.engine.PooledExchangeFactory;
 import org.junit.jupiter.api.Test;
 
-
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class PooledExchangeTest extends ContextTestSupport {
@@ -64,22 +63,22 @@ public class PooledExchangeTest extends ContextTestSupport {
             @Override
             public void configure() throws Exception {
                 from("timer:foo?period=1&delay=1&repeatCount=2").noAutoStartup()
-                    .setProperty("myprop", counter::incrementAndGet)
-                    .setHeader("myheader", counter::incrementAndGet)
-                    .process(new Processor() {
-                        @Override
-                        public void process(Exchange exchange) throws Exception {
-                            // should be same exchange instance as its pooled
-                            Exchange old = ref.get();
-                            if (old == null) {
-                                ref.set(exchange);
-                                exchange.getMessage().setHeader("first", true);
-                            } else {
-                                assertSame(old, exchange);
+                        .setProperty("myprop", counter::incrementAndGet)
+                        .setHeader("myheader", counter::incrementAndGet)
+                        .process(new Processor() {
+                            @Override
+                            public void process(Exchange exchange) throws Exception {
+                                // should be same exchange instance as its pooled
+                                Exchange old = ref.get();
+                                if (old == null) {
+                                    ref.set(exchange);
+                                    exchange.getMessage().setHeader("first", true);
+                                } else {
+                                    assertSame(old, exchange);
+                                }
                             }
-                        }
-                    })
-                    .to("mock:result");
+                        })
+                        .to("mock:result");
             }
         };
     }
