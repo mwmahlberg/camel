@@ -220,5 +220,4 @@ public class AvroListener {
         return exchange;
     }
 
-
 }

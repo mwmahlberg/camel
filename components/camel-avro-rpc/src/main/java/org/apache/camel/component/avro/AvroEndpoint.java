@@ -21,14 +21,11 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.apache.avro.Protocol;
-import org.apache.avro.Schema;
 import org.apache.avro.reflect.ReflectData;
 import org.apache.camel.AsyncEndpoint;
 import org.apache.camel.Category;
 import org.apache.camel.Component;
 import org.apache.camel.Consumer;
-import org.apache.camel.Exchange;
-import org.apache.camel.ExchangePattern;
 import org.apache.camel.Processor;
 import org.apache.camel.spi.UriEndpoint;
 import org.apache.camel.spi.UriParam;
