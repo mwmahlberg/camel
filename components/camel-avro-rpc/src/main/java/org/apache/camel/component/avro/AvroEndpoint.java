@@ -54,17 +54,6 @@ public abstract class AvroEndpoint extends DefaultEndpoint implements AsyncEndpo
         return false;
     }
 
-    public Exchange createExchange(Protocol.Message message, Object request) {
-        ExchangePattern pattern = ExchangePattern.InOut;
-        if (message.getResponse().getType().equals(Schema.Type.NULL)) {
-            pattern = ExchangePattern.InOnly;
-        }
-        Exchange exchange = createExchange(pattern);
-        exchange.getIn().setBody(request);
-        exchange.getIn().setHeader(AvroConstants.AVRO_MESSAGE_NAME, message.getName());
-        return exchange;
-    }
-
     @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         AvroConsumer consumer = new AvroConsumer(this, processor);

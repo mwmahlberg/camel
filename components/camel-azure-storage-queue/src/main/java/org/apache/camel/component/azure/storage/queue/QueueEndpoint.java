@@ -70,16 +70,6 @@ public class QueueEndpoint extends DefaultEndpoint {
                 ? configuration.getServiceClient() : QueueClientFactory.createQueueServiceClient(configuration);
     }
 
-    public Exchange createExchange(final QueueMessageItem messageItem) {
-        final Exchange exchange = createExchange();
-        final Message message = exchange.getIn();
-
-        message.setBody(messageItem.getMessageText());
-        message.setHeaders(QueueExchangeHeaders.createQueueExchangeHeadersFromQueueMessageItem(messageItem).toMap());
-
-        return exchange;
-    }
-
     /**
      * The component configurations
      */

@@ -35,10 +35,10 @@ public class BlobServiceConsumer extends ScheduledPollConsumer {
 
     @Override
     protected int poll() throws Exception {
-        Exchange exchange = super.getEndpoint().createExchange();
+        Exchange exchange = createExchange(true);
         try {
             getBlob(exchange);
-            super.getAsyncProcessor().process(exchange);
+            getProcessor().process(exchange);
             return 1;
         } catch (StorageException ex) {
             if (404 == ex.getHttpStatusCode()) {
