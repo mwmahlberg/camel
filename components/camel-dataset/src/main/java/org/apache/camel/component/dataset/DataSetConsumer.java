@@ -43,11 +43,6 @@ public class DataSetConsumer extends DefaultConsumer {
     }
 
     @Override
-    protected void doInit() throws Exception {
-        super.doInit();
-    }
-
-    @Override
     protected void doStart() throws Exception {
         super.doStart();
 

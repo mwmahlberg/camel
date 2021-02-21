@@ -87,7 +87,8 @@ public final class ConsulKeyValueConsumer extends AbstractConsulConsumer<KeyValu
                 }
 
                 message.setBody(
-                        configuration.isValueAsString() ? value.getValueAsString().orElse(null) : value.getValue().orElse(null));
+                        configuration.isValueAsString()
+                                ? value.getValueAsString().orElse(null) : value.getValue().orElse(null));
 
                 getProcessor().process(exchange);
             } catch (Exception e) {
