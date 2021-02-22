@@ -231,7 +231,7 @@ public class SqlConsumer extends ScheduledBatchPollingConsumer {
     }
 
     protected Exchange createExchange(Object data) {
-        final Exchange exchange = getEndpoint().createExchange(ExchangePattern.InOnly);
+        final Exchange exchange = createExchange(false);
         Message msg = exchange.getIn();
         if (getEndpoint().getOutputHeader() != null) {
             msg.setHeader(getEndpoint().getOutputHeader(), data);
@@ -274,10 +274,12 @@ public class SqlConsumer extends ScheduledBatchPollingConsumer {
             if (getEndpoint().isTransacted() && exchange.isFailed()) {
                 // break out as we are transacted and should rollback
                 Exception cause = exchange.getException();
+                // must release exchange
+                releaseExchange(exchange, false);
                 if (cause != null) {
                     throw cause;
                 } else {
-                    throw new RollbackExchangeException("Rollback transaction due error processing exchange", exchange);
+                    throw new RollbackExchangeException("Rollback transaction due error processing exchange", null);
                 }
             }
 
@@ -306,6 +308,8 @@ public class SqlConsumer extends ScheduledBatchPollingConsumer {
                 } else {
                     handleException("Error executing onConsume/onConsumeFailed query " + sql, e);
                 }
+            } finally {
+                releaseExchange(exchange, false);
             }
         }
 

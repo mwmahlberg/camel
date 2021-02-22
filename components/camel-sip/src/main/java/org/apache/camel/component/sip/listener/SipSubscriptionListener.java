@@ -48,14 +48,15 @@ public class SipSubscriptionListener implements SipListener {
         this.setSipSubscriber(sipSubscriber);
     }
 
-    private void dispatchExchange(Object response) throws CamelException {
+    private void dispatchExchange(Object response) {
         LOG.debug("Consumer Dispatching the received notification along the route");
-        Exchange exchange = sipSubscriber.getEndpoint().createExchange(ExchangePattern.InOnly);
+        Exchange exchange = sipSubscriber.createExchange(true);
+        exchange.setPattern(ExchangePattern.InOnly);
         exchange.getIn().setBody(response);
         try {
             sipSubscriber.getProcessor().process(exchange);
         } catch (Exception e) {
-            throw new CamelException("Error in consumer while dispatching exchange", e);
+            sipSubscriber.getExceptionHandler().handleException("Error in consumer while dispatching exchange", e);
         }
     }
 
