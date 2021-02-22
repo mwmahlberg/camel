@@ -64,11 +64,9 @@ public class VertxPlatformHttpConsumer extends DefaultConsumer {
     private final String fileNameExtWhitelist;
     private Set<Method> methods;
     private String path;
-
     private Route route;
 
-    public VertxPlatformHttpConsumer(
-                                     PlatformHttpEndpoint endpoint,
+    public VertxPlatformHttpConsumer(PlatformHttpEndpoint endpoint,
                                      Processor processor,
                                      List<Handler<RoutingContext>> handlers) {
         super(endpoint, processor);
