@@ -69,7 +69,7 @@ public class Harvester {
 
     }
 
-    private boolean harvest() throws IOException, URISyntaxException, ParserConfigurationException, SAXException, Exception {
+    private boolean harvest() throws Exception {
         boolean hasNext = false;
         if (!this.empty) {
             String responseXML = httpClient.doRequest(this.baseURI, this.verb, this.set, this.from, this.until, this.metadata,
@@ -88,13 +88,11 @@ public class Harvester {
         return hasNext;
     }
 
-    public void asynHarvest() throws IOException, URISyntaxException, ParserConfigurationException, SAXException, Exception {
+    public void asynHarvest() throws Exception {
         this.harvest();
-
     }
 
-    public List<String> synHarvest(boolean onlyFirst)
-            throws IOException, URISyntaxException, ParserConfigurationException, SAXException, Exception {
+    public List<String> synHarvest(boolean onlyFirst) throws Exception {
         while (this.harvest()) {
             if (onlyFirst) {
                 break;
