@@ -126,6 +126,13 @@ public class MailEndpoint extends ScheduledPollEndpoint implements HeaderFilterS
         return answer;
     }
 
+    public Exchange createExchange(Message message) {
+        Exchange exchange = super.createExchange();
+        exchange.setProperty(Exchange.BINDING, getBinding());
+        exchange.setIn(new MailMessage(exchange, message, getConfiguration().isMapMailMessage()));
+        return exchange;
+    }
+
     // Properties
     // -------------------------------------------------------------------------
 

@@ -19,13 +19,10 @@ package org.apache.camel.component.mongodb;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-import org.apache.camel.Exchange;
-import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import org.apache.camel.support.DefaultConsumer;
 import org.apache.camel.util.ObjectHelper;
 import org.bson.BsonDocument;
-import org.bson.Document;
 
 import static java.util.Collections.singletonList;
 
