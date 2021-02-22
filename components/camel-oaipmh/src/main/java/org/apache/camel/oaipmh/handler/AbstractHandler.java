@@ -20,7 +20,6 @@ import org.apache.camel.Consumer;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.oaipmh.component.OAIPMHConsumer;
 import org.apache.camel.oaipmh.model.OAIPMHResponse;
 import org.apache.camel.spi.ExceptionHandler;

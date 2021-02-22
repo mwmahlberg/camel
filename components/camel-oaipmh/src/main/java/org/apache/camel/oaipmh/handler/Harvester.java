@@ -16,15 +16,9 @@
  */
 package org.apache.camel.oaipmh.handler;
 
-import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
-
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.xml.sax.SAXException;
 
 import org.apache.camel.oaipmh.component.model.OAIPMHVerb;
 import org.apache.camel.oaipmh.model.OAIPMHResponse;

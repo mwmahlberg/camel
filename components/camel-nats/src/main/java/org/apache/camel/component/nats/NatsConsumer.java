@@ -174,7 +174,7 @@ public class NatsConsumer extends DefaultConsumer {
                             con.publish(msg.getReplyTo(), data);
                         }
                     }
-                } catch (Exception e){
+                } catch (Exception e) {
                     getExceptionHandler().handleException("Error during processing", exchange, e);
                 } finally {
                     releaseExchange(exchange, false);
