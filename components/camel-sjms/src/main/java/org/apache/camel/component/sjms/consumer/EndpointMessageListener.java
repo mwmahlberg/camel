@@ -29,6 +29,7 @@ import org.apache.camel.AsyncProcessor;
 import org.apache.camel.CamelExchangeException;
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
+import org.apache.camel.ExtendedExchange;
 import org.apache.camel.Processor;
 import org.apache.camel.RollbackExchangeException;
 import org.apache.camel.RuntimeCamelException;
@@ -242,9 +243,17 @@ public class EndpointMessageListener implements SessionMessageListener {
 
     public Exchange createExchange(Message message, Session session, Object replyDestination) {
         Exchange exchange = consumer.createExchange(false);
-        // create a mew SjmsMessage as it cannot be reset for reuse
-        // TODO: optimize to allow reset
-        exchange.setIn(new SjmsMessage(exchange, message, session, endpoint.getBinding()));
+
+        // optimize: either create a new SjmsMessage or reuse existing if exists
+        SjmsMessage msg = exchange.adapt(ExtendedExchange.class).getInOrNull(SjmsMessage.class);
+        if (msg == null) {
+            msg = new SjmsMessage(exchange, message, session, endpoint.getBinding());
+            exchange.setIn(msg);
+        } else {
+            msg.setJmsMessage(message);
+            msg.setJmsSession(session);
+            msg.setBinding(endpoint.getBinding());
+        }
 
         // lets set to an InOut if we have some kind of reply-to destination
         if (replyDestination != null && !disableReplyTo) {

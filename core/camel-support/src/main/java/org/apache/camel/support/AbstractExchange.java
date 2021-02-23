@@ -347,6 +347,18 @@ class AbstractExchange implements ExtendedExchange {
     }
 
     @Override
+    public <T> T getInOrNull(Class<T> type) {
+        if (in == null) {
+            return null;
+        }
+        if (type.isInstance(in)) {
+            return type.cast(in);
+        }
+
+        return null;
+    }
+
+    @Override
     public void setIn(Message in) {
         this.in = in;
         configureMessage(in);

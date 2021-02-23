@@ -16,15 +16,25 @@
  */
 package org.apache.camel.component.sjms.consumer;
 
+import org.apache.camel.CamelContext;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.component.sjms.support.JmsTestSupport;
+import org.apache.camel.impl.engine.PooledExchangeFactory;
 import org.junit.jupiter.api.Test;
 
-public class InOnlyConsumerQueueTest extends JmsTestSupport {
+public class InOnlyPooledExchangeTest extends JmsTestSupport {
 
     private static final String SJMS_QUEUE_NAME = "sjms:queue:in.only.consumer.queue";
     private static final String MOCK_RESULT = "mock:result";
+
+    @Override
+    protected CamelContext createCamelContext() throws Exception {
+        CamelContext context = super.createCamelContext();
+        context.adapt(ExtendedCamelContext.class).setExchangeFactory(new PooledExchangeFactory());
+        return context;
+    }
 
     @Test
     public void testSynchronous() throws Exception {
