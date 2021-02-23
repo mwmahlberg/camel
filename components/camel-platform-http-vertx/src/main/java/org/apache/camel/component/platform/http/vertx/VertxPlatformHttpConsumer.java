@@ -44,7 +44,6 @@ import org.apache.camel.component.platform.http.PlatformHttpEndpoint;
 import org.apache.camel.component.platform.http.spi.Method;
 import org.apache.camel.spi.HeaderFilterStrategy;
 import org.apache.camel.support.DefaultConsumer;
-import org.apache.camel.support.DefaultMessage;
 import org.apache.camel.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
