@@ -29,10 +29,7 @@ import org.apache.camel.Processor;
 import org.apache.camel.spi.ExchangeFactory;
 import org.apache.camel.spi.ExecutorServiceManager;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;

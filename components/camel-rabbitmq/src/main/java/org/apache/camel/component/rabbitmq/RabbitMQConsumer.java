@@ -131,7 +131,8 @@ public class RabbitMQConsumer extends DefaultConsumer implements Suspendable {
 
     public Exchange createExchange(Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
         Exchange exchange = createExchange(false);
-        endpoint.getMessageConverter().populateRabbitExchange(exchange, envelope, properties, body, false, endpoint.isAllowMessageBodySerialization());
+        endpoint.getMessageConverter().populateRabbitExchange(exchange, envelope, properties, body, false,
+                endpoint.isAllowMessageBodySerialization());
         return exchange;
     }
 
