@@ -345,7 +345,7 @@ public class HttpServerChannelHandler extends ServerChannelHandler {
     protected Exchange createExchange(ChannelHandlerContext ctx, Object message) throws Exception {
         Exchange exchange = consumer.createExchange(false);
 
-        // TODO: optimize to avoid creating new NettyHttpMessage
+        // create a new IN message as we cannot reuse with netty
         Message in;
         if (message instanceof FullHttpRequest) {
             FullHttpRequest request = (FullHttpRequest) message;
