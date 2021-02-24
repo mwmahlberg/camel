@@ -67,4 +67,13 @@ public final class DefaultExchangeFactory implements ExchangeFactory, CamelConte
         // not in use
     }
 
+    @Override
+    public int getCapacity() {
+        return 0;
+    }
+
+    @Override
+    public void setCapacity(int capacity) {
+        // not in use
+    }
 }

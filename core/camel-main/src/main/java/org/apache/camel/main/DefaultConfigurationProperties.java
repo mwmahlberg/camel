@@ -89,6 +89,7 @@ public abstract class DefaultConfigurationProperties<T> {
     private boolean lightweight;
     @Metadata(defaultValue = "default", enums = "default,pooled")
     private String exchangeFactory = "default";
+    private int exchangeFactoryCapacity = 100;
     private boolean exchangeFactoryStatisticsEnabled;
     // route controller
     @Metadata(defaultValue = "DEBUG")
@@ -936,6 +937,20 @@ public abstract class DefaultConfigurationProperties<T> {
      */
     public void setExchangeFactory(String exchangeFactory) {
         this.exchangeFactory = exchangeFactory;
+    }
+
+    /**
+     * The capacity the pool (for each consumer) uses for storing exchanges. The default capacity is 100.
+     */
+    public int getExchangeFactoryCapacity() {
+        return exchangeFactoryCapacity;
+    }
+
+    /**
+     * The capacity the pool (for each consumer) uses for storing exchanges. The default capacity is 100.
+     */
+    public void setExchangeFactoryCapacity(int exchangeFactoryCapacity) {
+        this.exchangeFactoryCapacity = exchangeFactoryCapacity;
     }
 
     public boolean isExchangeFactoryStatisticsEnabled() {
@@ -1810,6 +1825,14 @@ public abstract class DefaultConfigurationProperties<T> {
      */
     public T withExchangeFactory(String exchangeFactory) {
         this.exchangeFactory = exchangeFactory;
+        return (T) this;
+    }
+
+    /**
+     * The capacity the pool (for each consumer) uses for storing exchanges. The default capacity is 100.
+     */
+    public T withExchangeFactoryCapacity(int exchangeFactoryCapacity) {
+        this.exchangeFactoryCapacity = exchangeFactoryCapacity;
         return (T) this;
     }
 

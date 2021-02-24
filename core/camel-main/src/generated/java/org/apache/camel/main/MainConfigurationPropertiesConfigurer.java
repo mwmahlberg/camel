@@ -69,6 +69,8 @@ public class MainConfigurationPropertiesConfigurer extends org.apache.camel.supp
         case "EndpointRuntimeStatisticsEnabled": target.setEndpointRuntimeStatisticsEnabled(property(camelContext, boolean.class, value)); return true;
         case "exchangefactory":
         case "ExchangeFactory": target.setExchangeFactory(property(camelContext, java.lang.String.class, value)); return true;
+        case "exchangefactorycapacity":
+        case "ExchangeFactoryCapacity": target.setExchangeFactoryCapacity(property(camelContext, int.class, value)); return true;
         case "exchangefactorystatisticsenabled":
         case "ExchangeFactoryStatisticsEnabled": target.setExchangeFactoryStatisticsEnabled(property(camelContext, boolean.class, value)); return true;
         case "fileconfigurations":
@@ -254,6 +256,8 @@ public class MainConfigurationPropertiesConfigurer extends org.apache.camel.supp
         case "EndpointRuntimeStatisticsEnabled": return boolean.class;
         case "exchangefactory":
         case "ExchangeFactory": return java.lang.String.class;
+        case "exchangefactorycapacity":
+        case "ExchangeFactoryCapacity": return int.class;
         case "exchangefactorystatisticsenabled":
         case "ExchangeFactoryStatisticsEnabled": return boolean.class;
         case "fileconfigurations":
@@ -440,6 +444,8 @@ public class MainConfigurationPropertiesConfigurer extends org.apache.camel.supp
         case "EndpointRuntimeStatisticsEnabled": return target.isEndpointRuntimeStatisticsEnabled();
         case "exchangefactory":
         case "ExchangeFactory": return target.getExchangeFactory();
+        case "exchangefactorycapacity":
+        case "ExchangeFactoryCapacity": return target.getExchangeFactoryCapacity();
         case "exchangefactorystatisticsenabled":
         case "ExchangeFactoryStatisticsEnabled": return target.isExchangeFactoryStatisticsEnabled();
         case "fileconfigurations":

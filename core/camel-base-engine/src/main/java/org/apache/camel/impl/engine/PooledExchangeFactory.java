@@ -16,7 +16,8 @@
  */
 package org.apache.camel.impl.engine;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.camel.CamelContext;
@@ -44,13 +45,14 @@ public final class PooledExchangeFactory extends ServiceSupport
 
     private final ReleaseOnDoneTask onDone = new ReleaseOnDoneTask();
     private final Consumer consumer;
-    private final ConcurrentLinkedQueue<Exchange> pool = new ConcurrentLinkedQueue<>();
+    private BlockingQueue<Exchange> pool;
     private final AtomicLong acquired = new AtomicLong();
     private final AtomicLong created = new AtomicLong();
     private final AtomicLong released = new AtomicLong();
     private final AtomicLong discarded = new AtomicLong();
 
     private CamelContext camelContext;
+    private int capacity = 100;
     private boolean statisticsEnabled;
 
     public PooledExchangeFactory() {
@@ -61,6 +63,11 @@ public final class PooledExchangeFactory extends ServiceSupport
         this.consumer = consumer;
         this.camelContext = camelContext;
         this.statisticsEnabled = statisticsEnabled;
+    }
+
+    @Override
+    protected void doBuild() throws Exception {
+        this.pool = new ArrayBlockingQueue<>(capacity);
     }
 
     @Override
@@ -76,6 +83,14 @@ public final class PooledExchangeFactory extends ServiceSupport
     @Override
     public ExchangeFactory newExchangeFactory(Consumer consumer) {
         return new PooledExchangeFactory(consumer, camelContext, statisticsEnabled);
+    }
+
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
     }
 
     public boolean isStatisticsEnabled() {
@@ -136,10 +151,16 @@ public final class PooledExchangeFactory extends ServiceSupport
             ee.onDone(null);
 
             // only release back in pool if reset was success
+            boolean inserted = pool.offer(exchange);
+
             if (statisticsEnabled) {
-                released.incrementAndGet();
+                if (inserted) {
+                    released.incrementAndGet();
+                } else {
+                    discarded.incrementAndGet();
+                }
             }
-            return pool.offer(exchange);
+            return inserted;
         } catch (Exception e) {
             if (statisticsEnabled) {
                 discarded.incrementAndGet();

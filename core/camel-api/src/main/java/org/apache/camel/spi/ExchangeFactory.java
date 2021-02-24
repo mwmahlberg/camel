@@ -74,6 +74,16 @@ public interface ExchangeFactory {
     }
 
     /**
+     * The capacity the pool (for each consumer) uses for storing exchanges. The default capacity is 100.
+     */
+    int getCapacity();
+
+    /**
+     * The capacity the pool (for each consumer) uses for storing exchanges. The default capacity is 100.
+     */
+    void setCapacity(int capacity);
+
+    /**
      * Whether statistics is enabled.
      */
     boolean isStatisticsEnabled();
