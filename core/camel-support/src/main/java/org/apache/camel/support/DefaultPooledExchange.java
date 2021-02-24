@@ -16,8 +16,6 @@
  */
 package org.apache.camel.support;
 
-import java.util.function.Function;
-
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
@@ -30,7 +28,7 @@ import org.apache.camel.PooledExchange;
  */
 public final class DefaultPooledExchange extends AbstractExchange implements PooledExchange {
 
-    private Function<Exchange, Boolean> onDone;
+    private OnDoneTask onDone;
     private Class originalInClassType;
     private Message originalOut;
     private final ExchangePattern originalPattern;
@@ -70,7 +68,7 @@ public final class DefaultPooledExchange extends AbstractExchange implements Poo
     }
 
     @Override
-    public void onDone(Function<Exchange, Boolean> task) {
+    public void onDone(OnDoneTask task) {
         this.onDone = task;
     }
 
@@ -113,7 +111,7 @@ public final class DefaultPooledExchange extends AbstractExchange implements Poo
             this.errorHandlerHandled = null;
 
             if (onDone != null) {
-                onDone.apply(this);
+                onDone.onDone(this);
             }
         }
     }

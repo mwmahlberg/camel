@@ -16,8 +16,6 @@
  */
 package org.apache.camel;
 
-import java.util.function.Function;
-
 import org.apache.camel.spi.ExchangeFactory;
 
 /**
@@ -28,11 +26,19 @@ import org.apache.camel.spi.ExchangeFactory;
 public interface PooledExchange extends ExtendedExchange {
 
     /**
+     * Task to execute when the exchange is done.
+     */
+    @FunctionalInterface
+    interface OnDoneTask {
+        void onDone(Exchange exchange);
+    }
+
+    /**
      * Registers a task to run when this exchange is done.
      * <p/>
      * <b>Important:</b> This API is NOT intended for Camel end users, but used internally by Camel itself.
      */
-    void onDone(Function<Exchange, Boolean> task);
+    void onDone(OnDoneTask task);
 
     /**
      * When the exchange is done being used.
