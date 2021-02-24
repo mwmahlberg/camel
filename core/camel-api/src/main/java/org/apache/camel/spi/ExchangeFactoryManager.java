@@ -48,12 +48,17 @@ public interface ExchangeFactoryManager extends StaticService {
     /**
      * Number of consumers currently being managed
      */
-    int getSize();
+    int getConsumerCounter();
 
     /**
      * The capacity the pool (for each consumer) uses for storing exchanges. The default capacity is 100.
      */
     int getCapacity();
+
+    /**
+     * Number of currently exchanges being pooled (if pooled is in use)
+     */
+    int getPooledCounter();
 
     /**
      * Whether statistics is enabled.
@@ -74,5 +79,10 @@ public interface ExchangeFactoryManager extends StaticService {
      * Purges the internal caches (if pooled)
      */
     void purge();
+
+    /**
+     * Aggregated statistics for all the managed exchange factories
+     */
+    ExchangeFactory.Statistics getStatistics();
 
 }

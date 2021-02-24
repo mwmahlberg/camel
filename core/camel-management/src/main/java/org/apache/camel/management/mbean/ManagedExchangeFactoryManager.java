@@ -52,6 +52,16 @@ public class ManagedExchangeFactoryManager extends ManagedService implements Man
     }
 
     @Override
+    public Integer getConsumerCounter() {
+        return exchangeFactoryManager.getConsumerCounter();
+    }
+
+    @Override
+    public Integer getTotalPooled() {
+        return exchangeFactoryManager.getPooledCounter();
+    }
+
+    @Override
     public Integer getCapacity() {
         return exchangeFactoryManager.getCapacity();
     }
@@ -77,7 +87,27 @@ public class ManagedExchangeFactoryManager extends ManagedService implements Man
     }
 
     @Override
-    public TabularData listPools() {
+    public Long getTotalCreated() {
+        return exchangeFactoryManager.getStatistics().getCreatedCounter();
+    }
+
+    @Override
+    public Long getTotalAcquired() {
+        return exchangeFactoryManager.getStatistics().getAcquiredCounter();
+    }
+
+    @Override
+    public Long getTotalReleased() {
+        return exchangeFactoryManager.getStatistics().getReleasedCounter();
+    }
+
+    @Override
+    public Long getTotalDiscarded() {
+        return exchangeFactoryManager.getStatistics().getDiscardedCounter();
+    }
+
+    @Override
+    public TabularData listStatistics() {
         try {
             TabularData answer = new TabularDataSupport(CamelOpenMBeanTypes.listExchangeFactoryTabularType());
             Collection<ExchangeFactory> factories = exchangeFactoryManager.getExchangeFactories();
@@ -91,15 +121,19 @@ public class ManagedExchangeFactoryManager extends ManagedService implements Man
                 int capacity = ef.getCapacity();
                 int size = ef.getSize();
                 long created = 0;
+                long acquired = 0;
                 long released = 0;
+                long discarded = 0;
                 if (ef.isStatisticsEnabled()) {
                     created = ef.getStatistics().getCreatedCounter();
+                    acquired = ef.getStatistics().getAcquiredCounter();
                     released = ef.getStatistics().getReleasedCounter();
+                    discarded = ef.getStatistics().getDiscardedCounter();
                 }
 
                 CompositeData data = new CompositeDataSupport(
-                        ct, new String[] { "url", "capacity", "pooled", "created", "released" },
-                        new Object[] { url, capacity, size, created, released });
+                        ct, new String[] { "url", "capacity", "pooled", "created", "acquired", "released", "discarded" },
+                        new Object[] { url, capacity, size, created, acquired, released, discarded });
                 answer.put(data);
             }
             return answer;

@@ -30,8 +30,9 @@ import org.apache.camel.support.service.ServiceSupport;
 
 public class DefaultExchangeFactoryManager extends ServiceSupport implements ExchangeFactoryManager, CamelContextAware {
 
-    private CamelContext camelContext;
     private final Map<Consumer, ExchangeFactory> factories = new ConcurrentHashMap<>();
+    private final UtilizationStatistics statistics = new UtilizationStatistics();
+    private CamelContext camelContext;
     private int capacity;
     private boolean statisticsEnabled;
 
@@ -62,13 +63,22 @@ public class DefaultExchangeFactoryManager extends ServiceSupport implements Exc
     }
 
     @Override
-    public int getSize() {
+    public int getConsumerCounter() {
         return factories.size();
     }
 
     @Override
     public int getCapacity() {
         return capacity;
+    }
+
+    @Override
+    public int getPooledCounter() {
+        int counter = 0;
+        for (ExchangeFactory ef : factories.values()) {
+            counter += ef.getSize();
+        }
+        return counter;
     }
 
     @Override
@@ -92,6 +102,76 @@ public class DefaultExchangeFactoryManager extends ServiceSupport implements Exc
     @Override
     public void purge() {
         factories.values().forEach(ExchangeFactory::purge);
+    }
+
+    @Override
+    public ExchangeFactory.Statistics getStatistics() {
+        return statistics;
+    }
+
+    /**
+     * Represents utilization statistics
+     */
+    final class UtilizationStatistics implements ExchangeFactory.Statistics {
+
+        @Override
+        public void reset() {
+            resetStatistics();
+        }
+
+        @Override
+        public long getCreatedCounter() {
+            long answer = 0;
+            if (statisticsEnabled) {
+                for (ExchangeFactory ef : factories.values()) {
+                    answer += ef.getStatistics().getCreatedCounter();
+                }
+            }
+            return answer;
+        }
+
+        @Override
+        public long getAcquiredCounter() {
+            long answer = 0;
+            if (statisticsEnabled) {
+                for (ExchangeFactory ef : factories.values()) {
+                    answer += ef.getStatistics().getAcquiredCounter();
+                }
+            }
+            return answer;
+        }
+
+        @Override
+        public long getReleasedCounter() {
+            long answer = 0;
+            if (statisticsEnabled) {
+                for (ExchangeFactory ef : factories.values()) {
+                    answer += ef.getStatistics().getReleasedCounter();
+                }
+            }
+            return answer;
+        }
+
+        @Override
+        public long getDiscardedCounter() {
+            long answer = 0;
+            if (statisticsEnabled) {
+                for (ExchangeFactory ef : factories.values()) {
+                    answer += ef.getStatistics().getDiscardedCounter();
+                }
+            }
+            return answer;
+        }
+
+        @Override
+        public boolean isStatisticsEnabled() {
+            return statisticsEnabled;
+        }
+
+        @Override
+        public void setStatisticsEnabled(boolean statisticsEnabled) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Override

@@ -266,7 +266,7 @@ public abstract class AbstractCamelContext extends BaseService
     private volatile String version;
     private volatile PropertiesComponent propertiesComponent;
     private volatile CamelContextNameStrategy nameStrategy;
-    private volatile ExchangeFactoryManager exchangeFactoryManager = new DefaultExchangeFactoryManager();
+    private volatile ExchangeFactoryManager exchangeFactoryManager;
     private volatile ExchangeFactory exchangeFactory;
     private volatile ReactiveExecutor reactiveExecutor;
     private volatile ManagementNameStrategy managementNameStrategy;

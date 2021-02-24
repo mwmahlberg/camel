@@ -23,6 +23,9 @@ import org.apache.camel.api.management.ManagedOperation;
 
 public interface ManagedExchangeFactoryManagerMBean extends ManagedServiceMBean {
 
+    @ManagedAttribute(description = "Number of consumers managed")
+    Integer getConsumerCounter();
+
     @ManagedAttribute(description = "Max capacity per consumer for exchange pooling")
     Integer getCapacity();
 
@@ -38,7 +41,22 @@ public interface ManagedExchangeFactoryManagerMBean extends ManagedServiceMBean 
     @ManagedOperation(description = "Purges the pool")
     void purge();
 
-    @ManagedOperation(description = "Lists all the consumers and their pooling statistics")
-    TabularData listPools();
+    @ManagedAttribute(description = "Total number of currently pooled exchanges (if pooling is in use)")
+    Integer getTotalPooled();
+
+    @ManagedAttribute(description = "Total number of new exchanges created")
+    Long getTotalCreated();
+
+    @ManagedAttribute(description = "Total number of exchanges reused (if pooling is in use)")
+    Long getTotalAcquired();
+
+    @ManagedAttribute(description = "Total number of exchanges released back to the pool")
+    Long getTotalReleased();
+
+    @ManagedAttribute(description = "Total number of exchanges discarded (such as when capacity is full)")
+    Long getTotalDiscarded();
+
+    @ManagedOperation(description = "Lists all the statistics in tabular form")
+    TabularData listStatistics();
 
 }
