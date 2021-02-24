@@ -919,9 +919,8 @@ public abstract class DefaultConfigurationProperties<T> {
     }
 
     /**
-     * Configure the context to be lightweight. This will trigger some optimizations and memory reduction
-     * options. Lightweight context have some limitations. At this moment, dynamic endpoint destinations are not
-     * supported.
+     * Configure the context to be lightweight. This will trigger some optimizations and memory reduction options.
+     * Lightweight context have some limitations. At this moment, dynamic endpoint destinations are not supported.
      */
     public void setLightweight(boolean lightweight) {
         this.lightweight = lightweight;
@@ -932,9 +931,8 @@ public abstract class DefaultConfigurationProperties<T> {
     }
 
     /**
-     * Controls whether to pool (reuse) exchanges or create new fresh exchanges (default). Using pooled
-     * will reduce JVM garbage collection overhead by avoiding to re-create Exchange instances per message each consumer
-     * receives.
+     * Controls whether to pool (reuse) exchanges or create new fresh exchanges (default). Using pooled will reduce JVM
+     * garbage collection overhead by avoiding to re-create Exchange instances per message each consumer receives.
      */
     public void setExchangeFactory(String exchangeFactory) {
         this.exchangeFactory = exchangeFactory;
@@ -1807,9 +1805,8 @@ public abstract class DefaultConfigurationProperties<T> {
     }
 
     /**
-     * Controls whether to pool (reuse) exchanges or create new fresh exchanges (default). Using pooled
-     * will reduce JVM garbage collection overhead by avoiding to re-create Exchange instances per message each consumer
-     * receives.
+     * Controls whether to pool (reuse) exchanges or create new fresh exchanges (default). Using pooled will reduce JVM
+     * garbage collection overhead by avoiding to re-create Exchange instances per message each consumer receives.
      */
     public T withExchangeFactory(String exchangeFactory) {
         this.exchangeFactory = exchangeFactory;
