@@ -16,7 +16,6 @@
  */
 package org.apache.camel.main;
 
-import org.apache.camel.Experimental;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.ManagementStatisticsLevel;
 import org.apache.camel.StartupSummaryLevel;
@@ -915,37 +914,32 @@ public abstract class DefaultConfigurationProperties<T> {
         this.routesExcludePattern = routesExcludePattern;
     }
 
-    @Experimental
     public boolean isLightweight() {
         return lightweight;
     }
 
     /**
-     * Experimental: Configure the context to be lightweight. This will trigger some optimizations and memory reduction
+     * Configure the context to be lightweight. This will trigger some optimizations and memory reduction
      * options. Lightweight context have some limitations. At this moment, dynamic endpoint destinations are not
      * supported.
      */
-    @Experimental
     public void setLightweight(boolean lightweight) {
         this.lightweight = lightweight;
     }
 
-    @Experimental
     public String getExchangeFactory() {
         return exchangeFactory;
     }
 
     /**
-     * Experimental: Controls whether to pool (reuse) exchanges or create new fresh exchanges (default). Using pooled
+     * Controls whether to pool (reuse) exchanges or create new fresh exchanges (default). Using pooled
      * will reduce JVM garbage collection overhead by avoiding to re-create Exchange instances per message each consumer
      * receives.
      */
-    @Experimental
     public void setExchangeFactory(String exchangeFactory) {
         this.exchangeFactory = exchangeFactory;
     }
 
-    @Experimental
     public boolean isExchangeFactoryStatisticsEnabled() {
         return exchangeFactoryStatisticsEnabled;
     }
@@ -953,7 +947,6 @@ public abstract class DefaultConfigurationProperties<T> {
     /**
      * Configures whether statistics is enabled on exchange factory.
      */
-    @Experimental
     public void setExchangeFactoryStatisticsEnabled(boolean exchangeFactoryStatisticsEnabled) {
         this.exchangeFactoryStatisticsEnabled = exchangeFactoryStatisticsEnabled;
     }
@@ -1808,9 +1801,26 @@ public abstract class DefaultConfigurationProperties<T> {
      * this should only be done on a JVM with a single Camel application (microservice like camel-main, camel-quarkus,
      * camel-spring-boot). As this affects the entire JVM where Camel JARs are on the classpath.
      */
-    @Experimental
     public T withLightweight(boolean lightweight) {
         this.lightweight = lightweight;
+        return (T) this;
+    }
+
+    /**
+     * Controls whether to pool (reuse) exchanges or create new fresh exchanges (default). Using pooled
+     * will reduce JVM garbage collection overhead by avoiding to re-create Exchange instances per message each consumer
+     * receives.
+     */
+    public T withExchangeFactory(String exchangeFactory) {
+        this.exchangeFactory = exchangeFactory;
+        return (T) this;
+    }
+
+    /**
+     * Configures whether statistics is enabled on exchange factory.
+     */
+    public T withExchangeFactoryStatisticsEnabled(boolean exchangeFactoryStatisticsEnabled) {
+        this.exchangeFactoryStatisticsEnabled = exchangeFactoryStatisticsEnabled;
         return (T) this;
     }
 

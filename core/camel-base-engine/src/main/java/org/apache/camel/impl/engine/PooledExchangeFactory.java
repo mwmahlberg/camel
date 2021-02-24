@@ -24,7 +24,6 @@ import org.apache.camel.CamelContextAware;
 import org.apache.camel.Consumer;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
-import org.apache.camel.Experimental;
 import org.apache.camel.NonManagedService;
 import org.apache.camel.PooledExchange;
 import org.apache.camel.StaticService;
@@ -38,7 +37,6 @@ import org.slf4j.LoggerFactory;
 /**
  * Pooled {@link ExchangeFactory} that reuses {@link Exchange} instance from a pool.
  */
-@Experimental
 public final class PooledExchangeFactory extends ServiceSupport
         implements ExchangeFactory, CamelContextAware, StaticService, NonManagedService {
 
