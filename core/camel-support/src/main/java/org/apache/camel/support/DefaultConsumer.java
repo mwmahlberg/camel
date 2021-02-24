@@ -26,6 +26,7 @@ import org.apache.camel.PooledExchange;
 import org.apache.camel.Processor;
 import org.apache.camel.Route;
 import org.apache.camel.RouteAware;
+import org.apache.camel.Service;
 import org.apache.camel.spi.ExceptionHandler;
 import org.apache.camel.spi.ExchangeFactory;
 import org.apache.camel.spi.RouteIdAware;
@@ -168,6 +169,14 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
 
     public void setExceptionHandler(ExceptionHandler exceptionHandler) {
         this.exceptionHandler = exceptionHandler;
+    }
+
+    @Override
+    protected void doBuild() throws Exception {
+        super.doBuild();
+        if (exchangeFactory instanceof Service) {
+            ((Service) exchangeFactory).build();
+        }
     }
 
     @Override

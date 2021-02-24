@@ -59,10 +59,11 @@ public final class PooledExchangeFactory extends ServiceSupport
         this.consumer = null;
     }
 
-    private PooledExchangeFactory(Consumer consumer, CamelContext camelContext, boolean statisticsEnabled) {
+    private PooledExchangeFactory(Consumer consumer, CamelContext camelContext, boolean statisticsEnabled, int capacity) {
         this.consumer = consumer;
         this.camelContext = camelContext;
         this.statisticsEnabled = statisticsEnabled;
+        this.capacity = capacity;
     }
 
     @Override
@@ -82,7 +83,7 @@ public final class PooledExchangeFactory extends ServiceSupport
 
     @Override
     public ExchangeFactory newExchangeFactory(Consumer consumer) {
-        return new PooledExchangeFactory(consumer, camelContext, statisticsEnabled);
+        return new PooledExchangeFactory(consumer, camelContext, statisticsEnabled, capacity);
     }
 
     public int getCapacity() {
