@@ -86,6 +86,7 @@ import org.apache.camel.spi.EndpointRegistry;
 import org.apache.camel.spi.EndpointStrategy;
 import org.apache.camel.spi.EndpointUriFactory;
 import org.apache.camel.spi.ExchangeFactory;
+import org.apache.camel.spi.ExchangeFactoryManager;
 import org.apache.camel.spi.ExecutorServiceManager;
 import org.apache.camel.spi.FactoryFinder;
 import org.apache.camel.spi.FactoryFinderResolver;
@@ -169,6 +170,7 @@ public class LightweightRuntimeCamelContext implements ExtendedCamelContext, Cat
     private final BeanIntrospection beanIntrospection;
     private final HeadersMapFactory headersMapFactory;
     private final ExchangeFactory exchangeFactory;
+    private final ExchangeFactoryManager exchangeFactoryManager;
     private final ReactiveExecutor reactiveExecutor;
     private final AsyncProcessorAwaitManager asyncProcessorAwaitManager;
     private final ExecutorServiceManager executorServiceManager;
@@ -214,6 +216,7 @@ public class LightweightRuntimeCamelContext implements ExtendedCamelContext, Cat
         beanIntrospection = context.adapt(ExtendedCamelContext.class).getBeanIntrospection();
         headersMapFactory = context.adapt(ExtendedCamelContext.class).getHeadersMapFactory();
         exchangeFactory = context.adapt(ExtendedCamelContext.class).getExchangeFactory();
+        exchangeFactoryManager = context.adapt(ExtendedCamelContext.class).getExchangeFactoryManager();
         reactiveExecutor = context.adapt(ExtendedCamelContext.class).getReactiveExecutor();
         asyncProcessorAwaitManager = context.adapt(ExtendedCamelContext.class).getAsyncProcessorAwaitManager();
         executorServiceManager = context.getExecutorServiceManager();
@@ -1564,6 +1567,16 @@ public class LightweightRuntimeCamelContext implements ExtendedCamelContext, Cat
     @Override
     public ExchangeFactory getExchangeFactory() {
         return exchangeFactory;
+    }
+
+    @Override
+    public ExchangeFactoryManager getExchangeFactoryManager() {
+        return exchangeFactoryManager;
+    }
+
+    @Override
+    public void setExchangeFactoryManager(ExchangeFactoryManager exchangeFactoryManager) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

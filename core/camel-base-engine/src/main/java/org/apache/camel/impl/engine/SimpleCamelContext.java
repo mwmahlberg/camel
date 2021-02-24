@@ -42,6 +42,7 @@ import org.apache.camel.spi.DataFormatResolver;
 import org.apache.camel.spi.DeferServiceFactory;
 import org.apache.camel.spi.EndpointRegistry;
 import org.apache.camel.spi.ExchangeFactory;
+import org.apache.camel.spi.ExchangeFactoryManager;
 import org.apache.camel.spi.ExecutorServiceManager;
 import org.apache.camel.spi.FactoryFinder;
 import org.apache.camel.spi.FactoryFinderResolver;
@@ -552,6 +553,11 @@ public class SimpleCamelContext extends AbstractCamelContext {
                 ExchangeFactory.class);
 
         return result.orElseGet(DefaultExchangeFactory::new);
+    }
+
+    @Override
+    protected ExchangeFactoryManager createExchangeFactoryManager() {
+        return new DefaultExchangeFactoryManager();
     }
 
     @Override

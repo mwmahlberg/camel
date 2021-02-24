@@ -102,6 +102,7 @@ import org.apache.camel.spi.EndpointStrategy;
 import org.apache.camel.spi.EndpointUriFactory;
 import org.apache.camel.spi.EventNotifier;
 import org.apache.camel.spi.ExchangeFactory;
+import org.apache.camel.spi.ExchangeFactoryManager;
 import org.apache.camel.spi.ExecutorServiceManager;
 import org.apache.camel.spi.FactoryFinder;
 import org.apache.camel.spi.FactoryFinderResolver;
@@ -265,6 +266,7 @@ public abstract class AbstractCamelContext extends BaseService
     private volatile String version;
     private volatile PropertiesComponent propertiesComponent;
     private volatile CamelContextNameStrategy nameStrategy;
+    private volatile ExchangeFactoryManager exchangeFactoryManager = new DefaultExchangeFactoryManager();
     private volatile ExchangeFactory exchangeFactory;
     private volatile ReactiveExecutor reactiveExecutor;
     private volatile ManagementNameStrategy managementNameStrategy;
@@ -3684,6 +3686,7 @@ public abstract class AbstractCamelContext extends BaseService
         reactiveExecutor = null;
         asyncProcessorAwaitManager = null;
         exchangeFactory = null;
+        exchangeFactoryManager = null;
     }
 
     /**
@@ -4657,7 +4660,26 @@ public abstract class AbstractCamelContext extends BaseService
 
     @Override
     public void setExchangeFactory(ExchangeFactory exchangeFactory) {
-        this.exchangeFactory = doAddService(exchangeFactory);
+        // automatic inject camel context
+        exchangeFactory.setCamelContext(this);
+        this.exchangeFactory = exchangeFactory;
+    }
+
+    @Override
+    public ExchangeFactoryManager getExchangeFactoryManager() {
+        if (exchangeFactoryManager == null) {
+            synchronized (lock) {
+                if (exchangeFactoryManager == null) {
+                    setExchangeFactoryManager(createExchangeFactoryManager());
+                }
+            }
+        }
+        return exchangeFactoryManager;
+    }
+
+    @Override
+    public void setExchangeFactoryManager(ExchangeFactoryManager exchangeFactoryManager) {
+        this.exchangeFactoryManager = doAddService(exchangeFactoryManager);
     }
 
     @Override
@@ -4753,6 +4775,8 @@ public abstract class AbstractCamelContext extends BaseService
     }
 
     protected abstract ExchangeFactory createExchangeFactory();
+
+    protected abstract ExchangeFactoryManager createExchangeFactoryManager();
 
     protected abstract HealthCheckRegistry createHealthCheckRegistry();
 

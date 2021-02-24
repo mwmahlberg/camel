@@ -18,102 +18,85 @@ package org.apache.camel.impl.engine;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.camel.CamelContext;
-import org.apache.camel.CamelContextAware;
 import org.apache.camel.Consumer;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
-import org.apache.camel.NonManagedService;
 import org.apache.camel.PooledExchange;
-import org.apache.camel.StaticService;
 import org.apache.camel.spi.ExchangeFactory;
 import org.apache.camel.support.DefaultPooledExchange;
-import org.apache.camel.support.service.ServiceSupport;
-import org.apache.camel.util.URISupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Pooled {@link ExchangeFactory} that reuses {@link Exchange} instance from a pool.
  */
-public final class PooledExchangeFactory extends ServiceSupport
-        implements ExchangeFactory, CamelContextAware, StaticService, NonManagedService {
+public final class PooledExchangeFactory extends DefaultExchangeFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(PooledExchangeFactory.class);
 
     private final ReleaseOnDoneTask onDone = new ReleaseOnDoneTask();
     private final Consumer consumer;
     private BlockingQueue<Exchange> pool;
-    private final AtomicLong acquired = new AtomicLong();
-    private final AtomicLong created = new AtomicLong();
-    private final AtomicLong released = new AtomicLong();
-    private final AtomicLong discarded = new AtomicLong();
-
-    private CamelContext camelContext;
     private int capacity = 100;
-    private boolean statisticsEnabled;
 
     public PooledExchangeFactory() {
         this.consumer = null;
     }
 
-    private PooledExchangeFactory(Consumer consumer, CamelContext camelContext, boolean statisticsEnabled, int capacity) {
+    public PooledExchangeFactory(Consumer consumer) {
         this.consumer = consumer;
-        this.camelContext = camelContext;
-        this.statisticsEnabled = statisticsEnabled;
-        this.capacity = capacity;
     }
 
     @Override
     protected void doBuild() throws Exception {
+        super.doBuild();
         this.pool = new ArrayBlockingQueue<>(capacity);
     }
 
     @Override
-    public CamelContext getCamelContext() {
-        return camelContext;
-    }
-
-    @Override
-    public void setCamelContext(CamelContext camelContext) {
-        this.camelContext = camelContext;
+    public Consumer getConsumer() {
+        return consumer;
     }
 
     @Override
     public ExchangeFactory newExchangeFactory(Consumer consumer) {
-        return new PooledExchangeFactory(consumer, camelContext, statisticsEnabled, capacity);
+        PooledExchangeFactory answer = new PooledExchangeFactory(consumer);
+        answer.setCamelContext(camelContext);
+        answer.setCapacity(capacity);
+        answer.setStatisticsEnabled(isStatisticsEnabled());
+        return answer;
     }
 
     public int getCapacity() {
         return capacity;
     }
 
+    @Override
+    public int getSize() {
+        if (pool != null) {
+            return pool.size();
+        } else {
+            return 0;
+        }
+    }
+
     public void setCapacity(int capacity) {
         this.capacity = capacity;
-    }
-
-    public boolean isStatisticsEnabled() {
-        return statisticsEnabled;
-    }
-
-    public void setStatisticsEnabled(boolean statisticsEnabled) {
-        this.statisticsEnabled = statisticsEnabled;
     }
 
     @Override
     public Exchange create(boolean autoRelease) {
         Exchange exchange = pool.poll();
         if (exchange == null) {
-            if (statisticsEnabled) {
-                created.incrementAndGet();
-            }
             // create a new exchange as there was no free from the pool
             exchange = createPooledExchange(null, autoRelease);
+            if (statistics.isStatisticsEnabled()) {
+                statistics.created.increment();
+            }
         } else {
-            if (statisticsEnabled) {
-                acquired.incrementAndGet();
+            if (statistics.isStatisticsEnabled()) {
+                statistics.acquired.increment();
             }
             // reset exchange for reuse
             PooledExchange ee = exchange.adapt(PooledExchange.class);
@@ -126,14 +109,14 @@ public final class PooledExchangeFactory extends ServiceSupport
     public Exchange create(Endpoint fromEndpoint, boolean autoRelease) {
         Exchange exchange = pool.poll();
         if (exchange == null) {
-            if (statisticsEnabled) {
-                created.incrementAndGet();
-            }
             // create a new exchange as there was no free from the pool
             exchange = new DefaultPooledExchange(fromEndpoint);
+            if (statistics.isStatisticsEnabled()) {
+                statistics.created.increment();
+            }
         } else {
-            if (statisticsEnabled) {
-                acquired.incrementAndGet();
+            if (statistics.isStatisticsEnabled()) {
+                statistics.acquired.increment();
             }
             // reset exchange for reuse
             PooledExchange ee = exchange.adapt(PooledExchange.class);
@@ -154,17 +137,17 @@ public final class PooledExchangeFactory extends ServiceSupport
             // only release back in pool if reset was success
             boolean inserted = pool.offer(exchange);
 
-            if (statisticsEnabled) {
+            if (statistics.isStatisticsEnabled()) {
                 if (inserted) {
-                    released.incrementAndGet();
+                    statistics.released.increment();
                 } else {
-                    discarded.incrementAndGet();
+                    statistics.discarded.increment();
                 }
             }
             return inserted;
         } catch (Exception e) {
-            if (statisticsEnabled) {
-                discarded.incrementAndGet();
+            if (statistics.isStatisticsEnabled()) {
+                statistics.discarded.increment();
             }
             LOG.debug("Error resetting exchange: {}. This exchange is discarded.", exchange);
             return false;
@@ -187,25 +170,18 @@ public final class PooledExchangeFactory extends ServiceSupport
     }
 
     @Override
+    public void purge() {
+        pool.clear();
+    }
+
+    @Override
     protected void doStop() throws Exception {
+        exchangeFactoryManager.removeExchangeFactory(this);
+        logUsageSummary(LOG, "PooledExchangeFactory", pool.size());
+        statistics.reset();
         pool.clear();
 
-        if (statisticsEnabled && consumer != null) {
-            // only log if there is any usage
-            boolean shouldLog = created.get() > 0 || acquired.get() > 0 || released.get() > 0 || discarded.get() > 0;
-            if (shouldLog) {
-                String uri = consumer.getEndpoint().getEndpointBaseUri();
-                uri = URISupport.sanitizeUri(uri);
-
-                LOG.info("PooledExchangeFactory ({}) usage [created: {}, reused: {}, released: {}, discarded: {}]",
-                        uri, created.get(), acquired.get(), released.get(), discarded.get());
-            }
-        }
-
-        created.set(0);
-        acquired.set(0);
-        released.set(0);
-        discarded.set(0);
+        // do not call super
     }
 
     private final class ReleaseOnDoneTask implements PooledExchange.OnDoneTask {

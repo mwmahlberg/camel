@@ -16,20 +16,51 @@
  */
 package org.apache.camel.impl.engine;
 
+import java.util.concurrent.atomic.LongAdder;
+
 import org.apache.camel.CamelContext;
 import org.apache.camel.CamelContextAware;
 import org.apache.camel.Consumer;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
+import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.spi.ExchangeFactory;
+import org.apache.camel.spi.ExchangeFactoryManager;
 import org.apache.camel.support.DefaultExchange;
+import org.apache.camel.support.service.ServiceSupport;
+import org.apache.camel.util.URISupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Default {@link ExchangeFactory} that creates a new {@link Exchange} instance.
  */
-public final class DefaultExchangeFactory implements ExchangeFactory, CamelContextAware {
+public class DefaultExchangeFactory extends ServiceSupport implements ExchangeFactory, CamelContextAware {
 
-    private CamelContext camelContext;
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultExchangeFactory.class);
+
+    final UtilizationStatistics statistics = new UtilizationStatistics();
+    final Consumer consumer;
+    CamelContext camelContext;
+    ExchangeFactoryManager exchangeFactoryManager;
+
+    public DefaultExchangeFactory() {
+        this.consumer = null;
+    }
+
+    public DefaultExchangeFactory(Consumer consumer) {
+        this.consumer = consumer;
+    }
+
+    @Override
+    protected void doBuild() throws Exception {
+        this.exchangeFactoryManager = camelContext.adapt(ExtendedCamelContext.class).getExchangeFactoryManager();
+    }
+
+    @Override
+    public Consumer getConsumer() {
+        return consumer;
+    }
 
     @Override
     public CamelContext getCamelContext() {
@@ -43,28 +74,44 @@ public final class DefaultExchangeFactory implements ExchangeFactory, CamelConte
 
     @Override
     public ExchangeFactory newExchangeFactory(Consumer consumer) {
-        // we just use a shared factory
-        return this;
+        DefaultExchangeFactory answer = new DefaultExchangeFactory(consumer);
+        answer.setStatisticsEnabled(statistics.isStatisticsEnabled());
+        answer.setCamelContext(camelContext);
+        return answer;
     }
 
     @Override
     public Exchange create(boolean autoRelease) {
+        if (statistics.isStatisticsEnabled()) {
+            statistics.created.increment();
+        }
         return new DefaultExchange(camelContext);
     }
 
     @Override
     public Exchange create(Endpoint fromEndpoint, boolean autoRelease) {
+        if (statistics.isStatisticsEnabled()) {
+            statistics.created.increment();
+        }
         return new DefaultExchange(fromEndpoint);
     }
 
     @Override
+    public boolean release(Exchange exchange) {
+        if (statistics.isStatisticsEnabled()) {
+            statistics.released.increment();
+        }
+        return true;
+    }
+
+    @Override
     public boolean isStatisticsEnabled() {
-        return false;
+        return statistics.isStatisticsEnabled();
     }
 
     @Override
     public void setStatisticsEnabled(boolean statisticsEnabled) {
-        // not in use
+        statistics.setStatisticsEnabled(statisticsEnabled);
     }
 
     @Override
@@ -73,7 +120,109 @@ public final class DefaultExchangeFactory implements ExchangeFactory, CamelConte
     }
 
     @Override
+    public int getSize() {
+        return 0;
+    }
+
+    @Override
     public void setCapacity(int capacity) {
         // not in use
     }
+
+    @Override
+    public void resetStatistics() {
+        statistics.reset();
+    }
+
+    @Override
+    public void purge() {
+        // not in use
+    }
+
+    @Override
+    public Statistics getStatistics() {
+        return statistics;
+    }
+
+    @Override
+    protected void doStart() throws Exception {
+        exchangeFactoryManager.addExchangeFactory(this);
+    }
+
+    @Override
+    protected void doStop() throws Exception {
+        exchangeFactoryManager.removeExchangeFactory(this);
+        logUsageSummary(LOG, "DefaultExchangeFactory", 0);
+        statistics.reset();
+    }
+
+    void logUsageSummary(Logger log, String name, int pooled) {
+        if (statistics.isStatisticsEnabled() && consumer != null) {
+            // only log if there is any usage
+            long created = statistics.getCreatedCounter();
+            long acquired = statistics.getAcquiredCounter();
+            long released = statistics.getReleasedCounter();
+            long discarded = statistics.getDiscardedCounter();
+            boolean shouldLog = pooled > 0 || created > 0 || acquired > 0 || released > 0 || discarded > 0;
+            if (shouldLog) {
+                String uri = consumer.getEndpoint().getEndpointBaseUri();
+                uri = URISupport.sanitizeUri(uri);
+
+                LOG.info("{} ({}) usage [pooled: {}, created: {}, acquired: {} released: {}, discarded: {}]",
+                        name, uri, pooled, created, acquired, released, discarded);
+            }
+        }
+    }
+
+    /**
+     * Represents utilization statistics
+     */
+    final class UtilizationStatistics implements ExchangeFactory.Statistics {
+
+        private boolean statisticsEnabled;
+
+        final LongAdder created = new LongAdder();
+        final LongAdder acquired = new LongAdder();
+        final LongAdder released = new LongAdder();
+        final LongAdder discarded = new LongAdder();
+
+        @Override
+        public void reset() {
+            created.reset();
+            acquired.reset();
+            released.reset();
+            discarded.reset();
+        }
+
+        @Override
+        public long getCreatedCounter() {
+            return created.longValue();
+        }
+
+        @Override
+        public long getAcquiredCounter() {
+            return acquired.longValue();
+        }
+
+        @Override
+        public long getReleasedCounter() {
+            return released.longValue();
+        }
+
+        @Override
+        public long getDiscardedCounter() {
+            return discarded.longValue();
+        }
+
+        @Override
+        public boolean isStatisticsEnabled() {
+            return statisticsEnabled;
+        }
+
+        @Override
+        public void setStatisticsEnabled(boolean statisticsEnabled) {
+            this.statisticsEnabled = statisticsEnabled;
+        }
+    }
+
 }

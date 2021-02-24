@@ -65,6 +65,19 @@ public final class CamelOpenMBeanTypes {
                 new OpenType[] { SimpleType.STRING, SimpleType.BOOLEAN, SimpleType.BOOLEAN });
     }
 
+    public static TabularType listExchangeFactoryTabularType() throws OpenDataException {
+        CompositeType ct = listExchangeFactoryCompositeType();
+        return new TabularType("listExchangeFactory", "Lists all the exchange factories", ct, new String[] { "url" });
+    }
+
+    public static CompositeType listExchangeFactoryCompositeType() throws OpenDataException {
+        return new CompositeType(
+                "factories", "Factories",
+                new String[] { "url", "capacity", "pooled", "created", "released" },
+                new String[] { "Url", "Capacity", "Pooled", "Created", "Released" },
+                new OpenType[] { SimpleType.STRING, SimpleType.INTEGER, SimpleType.INTEGER, SimpleType.LONG, SimpleType.LONG });
+    }
+
     public static TabularType listRuntimeEndpointsTabularType() throws OpenDataException {
         CompositeType ct = listRuntimeEndpointsCompositeType();
         return new TabularType(
